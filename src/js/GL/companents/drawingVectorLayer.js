@@ -32,13 +32,11 @@ Vue.component('drawvector', {
           debugger;
           that.setPageDirection(direction);
         });
-        console.log(id);
         var source= GL.layerbox.getSource(id);
         this.layer=source;
 
         this.geojson=source.geojson;
-        console.log(source);
-        if(source.type=="collection"){
+        if(source.type=="collection" || source.type=="geojson"){
             this.point=true;
             this.line=true;
             this.polygon=true;
@@ -154,17 +152,17 @@ Vue.component('drawvector', {
       },
       startDrawing:function(type){
           var that=this;
-          console.log(type)
           that.setPage('tab1');
         switch(type){
             case 'point':{
                 GL.draw.start("Point2",that.layer.id,function(geojson,layerId){
                     that.setPage('tab2');
                     //GL.draw.deleteAll();
-
-                    that.drawngeojson=geojson
-
-                    that.fields=JSON.parse(JSON.stringify(that.layer.fields));
+                    that.drawngeojson=geojson;
+                    if(that.layer.fields!=undefined){
+                        that.fields=JSON.parse(JSON.stringify(that.layer.fields));
+                    }
+                    
                     that.fields.map(function(a){
                         a.value="";
                     })
@@ -178,7 +176,9 @@ Vue.component('drawvector', {
                     that.setPage('tab2');
                     //GL.draw.deleteAll();
                     that.drawngeojson=geojson
-                    that.fields=JSON.parse(JSON.stringify(that.layer.fields));
+                    if(that.layer.fields!=undefined){
+                        that.fields=JSON.parse(JSON.stringify(that.layer.fields));
+                    }
                     that.fields.map(function(a){
                         a.value="";
                     })
@@ -191,7 +191,9 @@ Vue.component('drawvector', {
                     that.setPage('tab2');
                     //GL.draw.deleteAll();
                     that.drawngeojson=geojson;
-                    that.fields=JSON.parse(JSON.stringify(that.layer.fields));
+                    if(that.layer.fields!=undefined){
+                        that.fields=JSON.parse(JSON.stringify(that.layer.fields));
+                    }
                     that.fields.map(function(a){
                         a.value="";
                     })
@@ -219,8 +221,9 @@ Vue.component('drawvector', {
         var data = GL.datatable.getData(this.geojson,fields);
         setTimeout(function(){
             that.table = new Tabulator("#datatableView1", {
-              layout:"fitColumns",
-              height:'400px',
+              layout:"fitData",
+              height:GL.config.clientHeight+'px',
+              resizableColumns:false,
               columns:columns
             });
             setTimeout(function(){

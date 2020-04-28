@@ -175,11 +175,12 @@ Vue.component('fileupload', {
                             });
                         }else{
                             var featureArray = reader2.readFeatures(data, {
-                              "featureProjection": 'EPSG:4326',
-                              "dataProjection": 'EPSG:'+epsgCode
+                              featureProjection: 'EPSG:4326',
+                              dataProjection: 'EPSG:'+epsgCode
                             });
                             var features2= new ol.format.GeoJSON().writeFeatures(featureArray,{
-                              featureProjection: 'EPSG:4326'
+                              featureProjection: 'EPSG:4326',
+                              dataProjection: 'EPSG:'+epsgCode
                             })
                             if (typeof features2 == 'string') {
                               features2 = JSON.parse(features2);

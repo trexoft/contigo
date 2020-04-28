@@ -48,7 +48,10 @@ Vue.component('createvectorlayer', {
                   {value:'linestring',text:'Çizgi'},
                   {value:'point',text:'Nokta'}
                 ]},
-                fields:[],
+                fields:[
+                  {name:'index',type:'integer',unique:true,auto:true,protecth:true},
+                  {name:'geotype',type:'string',protecth:true},
+                ],
                 recovery:false,
                 service:true
               },
@@ -92,6 +95,10 @@ Vue.component('createvectorlayer', {
           a.active=false;
           a.class="tab-pane";
         });
+        this.fields=[
+          {name:'index',type:'integer',unique:true,auto:true,protecth:true},
+          {name:'geotype',type:'string',protecth:true},
+        ];
         $("#map").show();
       },
       setPage:function(pageId){
@@ -242,7 +249,7 @@ Vue.component('createvectorlayer', {
             }
           });
           if(kontrol==undefined){
-            this.layer.fields.push({name:fieldName,type:this.dataTypes.selected});
+            this.layer.fields.push({name:fieldName,type:this.dataTypes.selected,protecth:false});
             GL.bilgi(fieldName+" Sütunu Eklenmiştir");
             this.fieldName='';
             this.dataTypes.selected='string';
@@ -645,7 +652,7 @@ Vue.component('createvectorlayer', {
                           '<th>{{sira+1}}</th>'+
                           '<td>{{sutun.name}}</td>'+
                           '<td>{{sutun.type}}</td>'+
-                          '<td><a @click="deleteField(sira)" href="#">Sil</a></td>'+
+                          '<td><a v-if="sutun.protecth==false" @click="deleteField(sira)" href="#">Sil</a></td>'+
                         '</tr>'+
                       '</tbody>'+
                     '</table>'+

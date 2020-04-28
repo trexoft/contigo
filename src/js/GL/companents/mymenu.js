@@ -269,6 +269,22 @@ Vue.component('mymenu', {
       e.preventDefault();
       GL.titresim();
       switch (menuid) {
+        case 'wmts': {
+          addwmts.$children[0].open();
+          break;
+        }
+        case 'xyz': {
+          addxyz.$children[0].open();
+          break;
+        }
+        case 'wms': {
+          addwms.$children[0].open();
+          break;
+        }
+        case 'wfs': {
+          addwfs.$children[0].open();
+          break;
+        }
         case 'vectorlayer': {
           createvectorlayer.$children[0].open();
           break;

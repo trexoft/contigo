@@ -430,7 +430,7 @@ Vue.component('coordinatetransform', {
         }
 
         var bbox = turf.bbox(geojson);
-        GL.ZoomLayer(bbox);
+        GL.zoomToBbox(bbox);
 
         GL.draw.deleteAll();
 

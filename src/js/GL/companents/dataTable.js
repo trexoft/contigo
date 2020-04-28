@@ -23,13 +23,15 @@ Vue.component('datatable', {
         var source=GL.layerbox.getSource(sourceId);
         this.header = source.name+' Katmanı Veri Tablosu';
         var geojson = source.geojson;
-        var fields = GL.datatable.getFields(sourceId);
-        var columns = GL.datatable.readyColumns(fields);
-        var data = GL.datatable.getData(geojson,fields);
+        debugger;
+        var columns = GL.datatable.readyColumns(source.fields);
+        var data = GL.datatable.getData(geojson,source.fields);
+        
         setTimeout(function(){
           that.table = new Tabulator("#datatableView1", {
-            layout:"fitColumns",
-            height:'400px',
+            layout:"fitData",
+            height:GL.config.clientHeight+'px',
+            resizableColumns:false,
             columns:columns
           });
           setTimeout(function(){

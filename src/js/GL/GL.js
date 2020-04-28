@@ -11,6 +11,7 @@ GL.config = {
   center:[0,0],
   pitch:0,
   rotate:0,
+  clientHeight:300,
   colors:['#f44336', '#e91e63', '#9c27b0', '#673ab7', '#3f51b5', '#2196f3', '#03a9f4', '#00bcd4', '#009688', '#4caf50', '#8bc34a', '#cddc39', '#ffeb3b', '#ffc107', '#ff9800', '#ff5722', '#795548', '#9e9e9e', '#607d8b']
 
 };
@@ -51,6 +52,8 @@ if(localStorage.getItem("maphash")!==null){
 }
 
 mapboxgl.accessToken = GL.config.mapboxglAccessToken;
+GL.config.clientHeight = document.getElementById('map').clientHeight;
+
 GL.map = new mapboxgl.Map({
   container: 'map',
   hash:true,
@@ -599,9 +602,50 @@ GL.createTilesUrl=function(url){
 
 
 GL.addGeojsonToLayer=function(geojson,layerid,color,info){
+  var props = geojson.features[0].properties;
+  var propsAddStatus = props==null || props==undefined;
+  if(propsAddStatus){
+    props={};
+  }
+  var fields = GL.datatable.getFieldsFromProperties(props);
+  var indexhave = props["index"]!==undefined;
+  var index = 0;
+  if(indexhave){
+    geojson.features.map(function(gjson){
+      var ind = gjson.properties.index;
+      gjson.properties.geotype=gjson.geometry.type;
+      ind=parseInt(ind,10);
+      if(ind>index){
+        index=ind;
+      }
+    });
+    fields.map(function(field){
+      if(field.name=='index'){
+        field.protecth=true;
+        field.auto=true;
+        field.unique=true;
+      }
+      if(field.name=='geotype'){
+        field.protecth=true;
+      }
+    });
+  }else{
+    geojson.features.map(function(gjson){
+      if(propsAddStatus){
+        gjson.properties={};
+      }
+      gjson.properties.geotype=gjson.geometry.type;
+      gjson.properties.index = index;
+      index++;
+    });
+    fields.push({name:'index',type:'integer',unique:true,auto:true,protecth:true});
+    fields.push({name:'geotype',type:'string',protecth:true});
+  }
+
+
   GL.map.addSource(layerid, { 'type': 'geojson', 'data': geojson });
 
-  var inf={id:layerid,name:info.name,type:info.type,layers:[layerid+"-point",layerid+"-line",layerid+"-polygon"],geojson:geojson}
+  var inf={id:layerid,name:info.name,type:info.type,layers:[layerid+"-point",layerid+"-line",layerid+"-polygon"],geojson:geojson,fields:fields,lastIndex:index}
   GL.layerbox.sources.push(inf);
 
   GL.map.addLayer({
@@ -635,6 +679,18 @@ GL.addGeojsonToLayer=function(geojson,layerid,color,info){
           'filter': ['==', '$type', 'LineString']
   });
 
+  // her harita değişiminde tekrar çağırılır
+  /*GL.map.on('data',function(e){
+    debugger;
+  });*/
+
+  /*
+  //katman yüklenince çalışır
+  GL.map.on('idle',function(e){
+    debugger;
+  });
+  */
+
   setTimeout(function(){
     var features=GL.layerbox.getLayerFeature(layerid,layerid+'-point');
     var features2=GL.layerbox.getLayerFeature(layerid,layerid+'-line');
@@ -646,6 +702,9 @@ GL.addGeojsonToLayer=function(geojson,layerid,color,info){
     GL.layerbox.layers.push(infLayer1);
     GL.layerbox.layers.push(infLayer2);
     GL.layerbox.layers.push(infLayer3);
+
+    var bbox = turf.bbox(geojson);
+    GL.zoomToBbox(bbox);
 
   },100)
 
@@ -970,7 +1029,7 @@ GL.changeLayerColor=function(source,color){
 }
 
 
-GL.ZoomLayer=function(bbox){
+GL.zoomToBbox=function(bbox){
   GL.map.fitBounds([[bbox[0],bbox[1]],[bbox[2],bbox[3]]],{
     padding: 25,
   });
@@ -1033,6 +1092,34 @@ GL.renkAl = function(callback){
 
 
 GL.datatable = {
+  getIndex:function(layerId){
+    var source = GL.layerbox.getSource(souceId);
+    source.lastIndex++;
+    return source.lastIndex;
+  },
+  getValueType:function(value){
+    var type = typeof value;
+    switch(type){
+      case 'number':{
+        var tam = parseInt(value);
+        if(value>tam){
+          type='double';
+        }else{
+          type='integer';
+        }
+        break;
+      }
+    }
+    return type;
+  },
+  getFieldsFromProperties:function(properties){
+    var props = [];
+    for(var i in properties){
+      var type = this.getValueType(properties[i]);
+      props.push({name:i,type:type});
+    }
+    return props;
+  },
   getFields:function(souceId){
     var source = GL.layerbox.getSource(souceId);
     if(source.fields==undefined){
@@ -1040,20 +1127,7 @@ GL.datatable = {
       var geojson = source.geojson.features[0];
       var properties = geojson.properties;
       for(var i in properties){
-        var propName = i;
-        var type = typeof properties[i];
-        switch(type){
-          case 'number':{
-            var deger = properties[i];
-            var tam = parseInt(deger);
-            if(deger>tam){
-              type='double';
-            }else{
-              type='integer';
-            }
-            break;
-          }
-        }
+        var type = this.getValueType(properties[i]);
         props.push({name:i,type:type});
       }
       return props;
@@ -1066,28 +1140,41 @@ GL.datatable = {
     fields.map(function(a){
       var name = a.name;
       var type = a.type;
+      var protecth = a["protecth"];
+      var columnObj = {title:name, field:name, editor:"input"}
       switch(type){
         case 'string':{
-          columns.push({title:name, field:name, editor:"input"});
+          //columns.push({title:name, field:name, editor:"input"});
           break;
         }
         case 'boolean':{
-          columns.push({title:name, field:name, hozAlign:"center", formatter:"tickCross", sorter:"boolean", editor:true});
-          break;
+          //columns.push({title:name, field:name, hozAlign:"center", formatter:"tickCross", sorter:"boolean", editor:true});
+          columnObj["hozAlign"]="center";
+          columnObj["formatter"]="tickCross";
+          columnObj["sorter"]="boolean";
+          columnObj["editor"]=true;
+          break;center
         }
         case 'integer':{
-          columns.push({title:name, field:name, editor:"input"});
+          //columns.push({title:name, field:name, editor:"input"});
           break;
         }
         case 'double':{
-          columns.push({title:name, field:name, editor:"input"});
+          //columns.push({title:name, field:name, editor:"input"});
           break;
         }
         case 'date':{
-          columns.push({title:name, field:name, editor:"input", sorter:"date"});
+          //columns.push({title:name, field:name, editor:"input", sorter:"date"});
+          columnObj["sorter"]="date";
           break;
         }
       }
+      if(protecth!==undefined){
+        if(protecth==true){
+          delete columnObj["editor"];
+        }
+      }
+      columns.push(columnObj);
     });
     return columns;
   },
@@ -1410,4 +1497,98 @@ GL.createVectorLayer=function(data){
     
   }
 
+}
+
+GL.addWMSLayer=function(url,layerid,layername){
+
+  GL.map.addSource(layerid, {
+    'type': 'raster',
+    'tiles': [url],
+    'tileSize': 256
+  });
+
+  var inf={id:layerid,name:layername,type:'wms',layers:[layerid+"-raster"],geojson:''}
+  GL.layerbox.sources.push(inf);
+
+  GL.map.addLayer(
+      {
+      'id': layerid+"-raster",
+      'type': 'raster',
+      'source': layerid,
+      'paint': {}
+      }
+  );
+
+  var infLayer1={id:layerid+"-raster",source:layerid,type:inf.type,features:"",color:""};
+  GL.layerbox.layers.push(infLayer1);
+}
+
+GL.addXYZLayer=function(layerid,url,layername,min,max){
+  //'https://stamen-tiles.a.ssl.fastly.net/watercolor/{z}/{x}/{y}.png'
+  GL.map.addSource(layerid,{
+    'type': 'raster',
+    'tiles': [url],
+    'tileSize': 256
+    })
+
+  var inf={id:layerid,name:layername,type:'xyz',layers:[layerid+"-raster"],geojson:''}
+  GL.layerbox.sources.push(inf);
+
+  GL.map.addLayer({
+        'id': layerid+'-raster',
+        'type': 'raster',
+        'source': layerid,
+        'paint': {},
+        'minzoom': Number(min),
+        'maxzoom': Number(max)
+  });
+
+  var infLayer1={id:layerid+"-xyz",source:layerid,type:inf.type,features:"",color:""};
+  GL.layerbox.layers.push(infLayer1);
+}
+
+GL.removeRasterLayerByID=function(layerID){
+  if(GL.map.getSource(layerID)){
+    GL.map.removeLayer(layerID+'-raster');
+    GL.map.removeSource(layerID)
+    
+    for (var j=0;j<GL.layerbox.layers.length;j++){
+      if(GL.layerbox.layers[j].source==layerID){
+        GL.layerbox.layers.splice(j,1);
+      }
+    }
+    
+    for (var i=0;i<GL.layerbox.sources.length;i++){
+      if(GL.layerbox.sources[i].id==layerID){
+        GL.layerbox.sources.splice(i,1);
+      }
+    }
+    GL.bilgi("Katman Silindi");
+  }else{
+    return false
+  }
+}
+
+GL.addWMTSLayer=function(url,layerid,layername){
+  //https://sampleserver6.arcgisonline.com/arcgis/rest/services/WorldTimeZones/MapServer/WMTS/tile/1.0.0/WorldTimeZones/default/default028mm/{z}/{y}/{x}.png
+  GL.map.addSource(layerid, {
+    'type': 'raster',
+    'tiles': [url],
+    'tileSize': 256
+  });
+
+  var inf={id:layerid,name:layername,type:'wmts',layers:[layerid+"-raster"],geojson:''}
+  GL.layerbox.sources.push(inf);
+
+  GL.map.addLayer(
+      {
+      'id': layerid+"-raster",
+      'type': 'raster',
+      'source': layerid,
+      'paint': {}
+      }
+  );
+
+  var infLayer1={id:layerid+"-raster",source:layerid,type:inf.type,features:"",color:""};
+  GL.layerbox.layers.push(infLayer1);
 }
