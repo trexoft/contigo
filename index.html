@@ -1,0 +1,157 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+    <title>Mobil GISLayer</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1, maximum-scale=1, viewport-fit=cover" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="theme-color" content="#000000">
+    <meta name="description" content="GISLayer Geographic Information System Solution">
+    <meta name="keywords" content="GISLayer, gis, geographic, information, system" />
+    <link rel="icon" type="image/png" href="./src/img/favicon/favicon.ico" sizes="32x32">
+    <link rel="manifest" href="./src/img/favicon/manifest.json">
+    <link rel="apple-touch-icon" sizes="180x180" href="./src/img/favicon/android-icon-192x192.png">
+
+    <link rel="stylesheet" href="./src/css/style.css">
+    <link rel="stylesheet" href="./src/css/gislayer.css">
+    <link rel="stylesheet" href="./src/css/animasyon.css">
+    <link rel="stylesheet" href="./src/css/tabulator_bootstrap4.css">
+    <link href='./src/css/mapbox-gl.css' rel='stylesheet' />
+    <link rel="stylesheet" href="./src/css/mapbox-gl-geocoder.css" type="text/css"/>
+    <link rel="stylesheet" href="./src/css/mapbox-gl-draw.css" type="text/css"/>
+    
+
+
+    <script src='./src/js/lib/service-workers.js'></script>
+    <script src='./src/js/lib/mapbox-gl.js'></script>
+    <script src="./src/js/lib/mapbox-gl-geocoder.min.js"></script>
+    <script src="./src/js/lib/es6-promise.min.js"></script>
+    <script src="./src/js/lib/es6-promise.auto.min.js"></script>
+    <script src="./src/js/lib/vue.min.js"></script>
+    <script src="./src/js/lib/turf.min.js"></script>
+    <script src="./src/js/lib/mapbox-gl-draw.js"></script>
+    <script src="./src/js/lib/ol.js"></script>
+    <script src="./src/js/lib/proj4.js"></script>
+    <script src="./src/js/lib/shp.js"></script>
+    <script src="./src/js/lib/canvasjs.min.js"></script>
+    <script src="./src/js/lib/shpwrite.js"></script>
+    <script src="./src/js/lib/xlsx.full.min.js"></script>
+    
+
+
+</head>
+
+<body>
+    <div id="map" style="position: fixed; height: calc(100% - 114px); width: 100%; top: 56px;"></div>
+    <!-- loader -->
+    <div id="loader">
+        <div class="spinner-border text-red1" role="status"></div>
+        <div id="loadingText" class="loaderTextLigh">Lütfen Bekleyiniz!</div>
+    </div>
+    
+    <!-- * loader -->
+
+    <!-- App Header ve Search -->
+    <div id="myheader"><myheader></myheader></div>
+    <!-- * App Header -->
+
+ 
+
+    
+
+
+    <!-- App Bottom Menu -->
+    <div id="myfooter"><myfooter></myfooter></div>
+    <!-- * App Bottom Menu -->
+
+    <!-- App Menu -->
+    <div id="mymenu"><mymenu></mymenu></div>
+    <!-- * App Menu -->
+
+    <!-- App Modals -->
+    <div id="basemaps"><basemaps></basemaps></div>
+    <div id="fileupload"><fileupload></fileupload></div>
+    <div id="exportmap"><exportmap></exportmap></div>
+    <div id="share"><share></share></div>
+    <div id="toast"><toast></toast></div>
+    <div id="notification"><notification></notification></div>
+    <div id="mydialog"><mydialog></mydialog></div>
+    <div id="measurement"><measurement></measurement></div>
+    <div id="measuretable"><measuretable></measuretable></div>
+    <div id="epsg"><epsg></epsg></div>
+    <div id="terrainprofile"><terrainprofile></terrainprofile></div>
+    <div id="emptytab"><emptytab></emptytab></div>
+    <div id="emptymodal"><emptymodal></emptymodal></div>
+    <div id="gpstrack"><gpstrack></gpstrack></div>
+    <div id="layerbox"><layerbox></layerbox></div>
+    <div id="actionsheet"><actionsheet></actionsheet></div>
+    <div id="layerdownload"><layerdownload></layerdownload></div>
+    <div id="excelpanel"><excelpanel></excelpanel></div>
+    <div id="distancecalculate"><distancecalculate></distancecalculate></div>
+    <div id="searchh"><searchh></searchh></div>
+    <div id="coordinatetransform"><coordinatetransform></coordinatetransform></div>
+    <div id="mydialoginputs"><mydialoginputs></mydialoginputs></div>
+    <div id="destinationpoint"><destinationpoint></destinationpoint></div>
+    <div id="createvectorlayer"><createvectorlayer></createvectorlayer></div>
+    <div id="datatable"><datatable></datatable></div>
+    <div id="drawvector"><drawvector></drawvector></div>
+    <!-- * App Modals -->
+
+    <script src="https://unpkg.com/ionicons@5.0.0/dist/ionicons.js"></script>
+
+    <script src="./src/js/lib/jquery-3.4.1.min.js"></script>
+    <script src="./src/js/lib/popper.min.js"></script>
+    <script src="./src/js/lib/bootstrap.min.js"></script>
+    <script src="./src/js/lib/owl.carousel.min.js"></script>
+    <script src="./src/js/lib/download.js"></script>
+    <script src="./src/js/lib/sharer.min.js"></script>
+    <script src="./src/js/lib/Blob.js"></script>
+    <script src="./src/js/lib/shim.min.js"></script>
+    <script src="./src/js/lib/tabulator.js"></script>
+
+    <!-- Base Js File -->
+    <script src="./src/js/lib/base.js"></script>
+    <script src="./src/js/languages/default.js"></script>
+    <script src="./src/js/GL/GL.js"></script>
+
+    <script src="./src/js/GL/companents/myheader.js"></script>
+    <script src="./src/js/GL/companents/myfooter.js"></script>
+    <script src="./src/js/GL/companents/mymenu.js"></script>
+    <script src="./src/js/GL/companents/basemaps.js"></script>
+    <script src="./src/js/GL/companents/fileupload.js"></script>
+    <script src="./src/js/GL/companents/exportmap.js"></script>
+    <script src="./src/js/GL/companents/share.js"></script>
+    <script src="./src/js/GL/companents/toast.js"></script>
+    <script src="./src/js/GL/companents/notification.js"></script>
+    <script src="./src/js/GL/companents/dialog.js"></script>
+    <script src="./src/js/GL/companents/measurement.js"></script>
+    <script src="./src/js/GL/companents/measureTable.js"></script>
+    <script src="./src/js/GL/companents/epsgList.js"></script>
+    <script src="./src/js/GL/companents/terrainProfile.js"></script>
+    <script src="./src/js/GL/companents/emptyTab.js"></script>
+    <script src="./src/js/GL/companents/emptyModal.js"></script>
+    <script src="./src/js/GL/companents/gpsTrack.js"></script>
+    <script src="./src/js/GL/companents/layerBox.js"></script>
+    <script src="./src/js/GL/companents/actionSheet.js"></script>
+    <script src="./src/js/GL/companents/layerDownload.js"></script>
+    <script src="./src/js/GL/companents/excel.js"></script>
+    <script src="./src/js/GL/companents/distanceCalculate.js"></script>
+    <script src="./src/js/GL/companents/search.js"></script>
+    <script src="./src/js/GL/companents/coordinateTransform.js"></script>
+    <script src="./src/js/GL/companents/dialogInputs.js"></script>
+    <script src="./src/js/GL/companents/destinationPoint.js"></script>
+    <script src="./src/js/GL/companents/createVectorLayer.js"></script>
+    <script src="./src/js/GL/companents/dataTable.js"></script>
+    <script src="./src/js/GL/companents/drawingVectorLayer.js"></script>
+
+
+
+
+
+    <!--<script src="./src/js/GL/endWorks.js"></script>-->
+
+</body>
+
+</html>
