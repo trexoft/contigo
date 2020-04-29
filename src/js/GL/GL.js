@@ -21,7 +21,7 @@ GL.config = {
 GL.lang = lang;
 
 Object.defineProperty(window, 'devicePixelRatio', {
-  get: function() {return 3;}
+  get: function() {return 1;}
 });
 
 GL.devicePixelRatio = JSON.parse(JSON.stringify(window.devicePixelRatio));
