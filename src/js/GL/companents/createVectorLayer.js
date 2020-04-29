@@ -52,6 +52,10 @@ Vue.component('createvectorlayer', {
                   {name:'index',type:'integer',unique:true,auto:true,protecth:true},
                   {name:'geotype',type:'string',protecth:true},
                 ],
+                unique:false,
+                auto:false,
+                edit:true,
+                startValue:0,
                 recovery:false,
                 service:true
               },
@@ -240,6 +244,7 @@ Vue.component('createvectorlayer', {
         this.fieldName=fieldName;
       },
       addField:function(){
+        debugger;
         if(this.fieldName!==""){
           this.writeField();
           var fieldName = this.fieldName;
@@ -249,7 +254,28 @@ Vue.component('createvectorlayer', {
             }
           });
           if(kontrol==undefined){
-            this.layer.fields.push({name:fieldName,type:this.dataTypes.selected,protecth:false});
+            var obj = {name:fieldName,type:this.dataTypes.selected,protecth:false};
+            if(this.dataTypes.selected=='integer'){
+              if(this.layer.unique==true){
+                obj["unique"]=true;
+              }else{
+                obj["unique"]=false;
+              }
+              if(this.layer.auto==true){
+                obj["auto"]=true;
+                obj["index"]=parseInt(this.layer.startValue,10);
+              }else{
+                obj["auto"]=false;
+              }
+            }
+
+            if(this.layer.edit==true){
+              obj["protecth"]=true;
+            }else{
+              obj["protecth"]=false;
+            }
+            this.layer.fields.push(obj);
+            
             GL.bilgi(fieldName+" Sütunu Eklenmiştir");
             this.fieldName='';
             this.dataTypes.selected='string';
@@ -629,6 +655,44 @@ Vue.component('createvectorlayer', {
                         '<i class="clear-input"> <ion-icon name="close-circle"></ion-icon></i>'+
                       '</div>'+
                     '</div>'+
+
+                    '<ul class="listview simple-listview">'+
+                     '<li style="padding:0;">'+
+                       '<div style="font-size: 12px;">Düzenlenebilirlik ({{layer.edit==true?\'Açık\':\'Kapalı\'}})</div>'+
+                       '<div class="custom-control custom-switch">'+
+                       '<input id="stylingVectorCheckbox9" type="checkbox" v-model="layer.edit" class="custom-control-input">'+
+                           '<label for="stylingVectorCheckbox9" class="custom-control-label"></label>'+
+                       '</div>'+
+                     '</li>'+
+                    '</ul>'+
+
+                    '<ul v-if="dataTypes.selected==\'integer\'" class="listview simple-listview">'+
+                     '<li style="padding:0;">'+
+                       '<div style="font-size: 12px;">Otomatik Sayı Artırma ({{layer.auto==true?\'Açık\':\'Kapalı\'}})</div>'+
+                       '<div class="custom-control custom-switch">'+
+                       '<input id="stylingVectorCheckbox7" type="checkbox" v-model="layer.auto" class="custom-control-input">'+
+                           '<label for="stylingVectorCheckbox7" class="custom-control-label"></label>'+
+                       '</div>'+
+                     '</li>'+
+                    '</ul>'+
+
+                    '<div v-if="dataTypes.selected==\'integer\' && layer.auto==true" class="form-group basic">'+
+                      '<div class="input-wrapper">'+
+                        '<label class="label">Kayıt Başlangıç Değeri :</label>'+
+                        '<input type="number" class="form-control" v-model="layer.startValue" placeholder="Başlangıç Değeri Giriniz">'+
+                        '<i class="clear-input"> <ion-icon name="close-circle"></ion-icon></i>'+
+                      '</div>'+
+                    '</div>'+
+
+                    '<ul v-if="dataTypes.selected==\'integer\'" class="listview simple-listview">'+
+                     '<li style="padding:0;">'+
+                       '<div style="font-size: 12px;">Benzersiz Değerlere Sahip ({{layer.unique==true?\'Açık\':\'Kapalı\'}})</div>'+
+                       '<div class="custom-control custom-switch">'+
+                       '<input id="stylingVectorCheckbox8" type="checkbox" v-model="layer.unique" class="custom-control-input">'+
+                           '<label for="stylingVectorCheckbox8" class="custom-control-label"></label>'+
+                       '</div>'+
+                     '</li>'+
+                    '</ul>'+
 
                     '<div class="form-group basic">'+
                       '<div class="input-wrapper">'+
