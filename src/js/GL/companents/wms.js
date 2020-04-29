@@ -33,7 +33,7 @@ Vue.component('addwms', {
         }else if(this.servicelayer==""){
           GL.uyari("Servis Katman Adı Boş Olamaz");
         }else{
-            var url= 'http://localhost:8080/geoserver/topp/wms?service=WMS&version='+this.versions.selected+'&request=GetMap&layers='+this.servicelayer+'&styles=&bbox={bbox-epsg-3857}&transparent=true&width=256&height=256&srs=EPSG:3857&format='+this.type.selected;
+            var url= this.url+'?service=WMS&version='+this.versions.selected+'&request=GetMap&layers='+this.servicelayer+'&styles=&bbox={bbox-epsg-3857}&transparent=true&width=256&height=256&srs=EPSG:3857&format='+this.type.selected;
             //'http://localhost:8080/geoserver/topp/wms?service=WMS&version=1.1.0&request=GetMap&layers=topp:states&styles=&bbox={bbox-epsg-3857}&transparent=true&width=768&height=330&srs=EPSG:3857&format=image/png'
             var id=Date.now().toString();
             GL.addWMSLayer(url,id,this.layerName);

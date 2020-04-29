@@ -32,14 +32,15 @@ Vue.component('addwfs', {
           }else if(this.servicelayer==""){
             GL.uyari("Servis Katman Adı Boş Olamaz");
           }else{
-            var url2=this.url+"?service=WFS&version="+this.versions.selected+"&request=GetFeature&typeName="+this.servicelayer+"&maxFeatures=50&outputFormat=application%2Fjson";
+            var url2=this.url+"?service=WFS&version="+this.versions.selected+"&srsname=EPSG:4326&request=GetFeature&typeName="+this.servicelayer+"&outputFormat=application%2Fjson";
             //"http://localhost:8080/geoserver/deneme/ows?service=WFS&version=1.0.0&request=GetFeature&typeName=deneme:izmir&maxFeatures=50&outputFormat=application%2Fjson"
             $.get(url2,function(data, status){
                 console.log(status);
                 console.log(data);
                 var color=GL.config.colors[10];
-                var information={id:"wfslayer",name:that.layerName,type:'collection',layers:["wfslayer-point","wfslayer-line","wfslayer-polygon"]};
-                GL.addGeojsonToLayer(data,"wfslayer",color,information);
+                var id = 'wfs'+Date.now();
+                var information={id:id,name:that.layerName,type:'collection',layers:[id+"-point",id+"-line",id+"-polygon"]};
+                GL.addGeojsonToLayer(data,id,color,information);
                 $("#addwfsserver").modal('hide');
                 GL.bilgi("Başarıyla Eklendi");   
             });
