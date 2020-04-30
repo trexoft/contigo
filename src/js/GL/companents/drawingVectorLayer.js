@@ -23,6 +23,9 @@ Vue.component('drawvector', {
               button:false,
               drawngeojson:false,
               table:{},
+              auto:[],
+              inputs:[],
+              uniqueColumn:[]
           }
       },
       open:function(id){
@@ -33,6 +36,7 @@ Vue.component('drawvector', {
           that.setPageDirection(direction);
         });
         var source= GL.layerbox.getSource(id);
+        console.log(source);
         this.layer=source;
 
         this.geojson=source.geojson;
@@ -157,15 +161,47 @@ Vue.component('drawvector', {
             case 'point':{
                 GL.draw.start("Point2",that.layer.id,function(geojson,layerId){
                     that.setPage('tab2');
+                    that.auto=[];
+                    that.uniqueColumn=[];
                     //GL.draw.deleteAll();
                     that.drawngeojson=geojson;
                     if(that.layer.fields!=undefined){
                         that.fields=JSON.parse(JSON.stringify(that.layer.fields));
                     }
+
+                    var index=GL.datatable.getIndex(that.layer.id);
+                    console.log(geojson);
+                    var geotype=geojson.geometry.type;
                     
                     that.fields.map(function(a){
+                      if(a.name=="index"){
+                          a.value=index;
+                      }else if(a.name=="geotype"){
+                        a.value=geotype
+                      }else if(a.type=="integer" && a.auto==true && a.name!="index"){
+                        var index2=GL.datatable.getFieldIndex(that.layer.id,a);
+                        console.log(index2);
+                        a.value=index2;
+                        that.auto.push(a);
+                      }else if(a.type=="integer" && a.default==true){
+                        a.value=a.defaultInteger;
+                      }else if(a.type=="double" && a.default==true){
+                        a.value=a.defaultDouble;
+                      }else if(a.default==true && a.type=="string"){
+                        a.value=a.deafultString;
+                      }else if(a.default==true && a.type=="boolean"){
+                        a.value=a.defaultBoolean;
+                      }else{
                         a.value="";
+                      }
+
+                      if(a.unique==true && a.name!="index"){
+                        that.uniqueColumn.push(a.name);
+                      }
+
                     })
+
+
                     that.button=true;
 
                 });
@@ -174,13 +210,41 @@ Vue.component('drawvector', {
             case 'linestring':{
                 GL.draw.start("LineString",that.layer.id,function(geojson,layerId){
                     that.setPage('tab2');
+                    that.auto=[];
+                    that.uniqueColumn=[];
                     //GL.draw.deleteAll();
                     that.drawngeojson=geojson
                     if(that.layer.fields!=undefined){
                         that.fields=JSON.parse(JSON.stringify(that.layer.fields));
                     }
+
+                    var index=GL.datatable.getIndex(that.layer.id);
+                    var geotype=geojson.geometry.type;
+                    
                     that.fields.map(function(a){
+                      if(a.name=="index"){
+                          a.value=index;
+                      }else if(a.name=="geotype"){
+                        a.value=geotype
+                      }else if(a.type=="integer" && a.auto==true && a.name!="index"){
+                        var index2=GL.datatable.getFieldIndex(that.layer.id,a);
+                        a.value=index2;
+                        that.auto.push(a);
+                      }else if(a.type=="integer" && a.default==true){
+                        a.value=a.defaultInteger;
+                      }else if(a.type=="double" && a.default==true){
+                        a.value=a.defaultDouble;
+                      }else if(a.default==true && a.type=="string"){
+                        a.value=a.deafultString;
+                      }else if(a.default==true && a.type=="boolean"){
+                        a.value=a.defaultBoolean;
+                      }else{
                         a.value="";
+                      }
+                      
+                      if(a.unique==true && a.name!="index"){
+                        that.uniqueColumn.push(a.name);
+                      }
                     })
                     that.button=true;
                 });
@@ -189,13 +253,43 @@ Vue.component('drawvector', {
             case 'polygon':{
                 GL.draw.start("Polygon",that.layer.id,function(geojson,layerId){
                     that.setPage('tab2');
+                    that.auto=[];
+                    that.uniqueColumn=[];
                     //GL.draw.deleteAll();
                     that.drawngeojson=geojson;
                     if(that.layer.fields!=undefined){
                         that.fields=JSON.parse(JSON.stringify(that.layer.fields));
                     }
+                    var index=GL.datatable.getIndex(that.layer.id);
+                    var geotype=geojson.geometry.type;
+                    
                     that.fields.map(function(a){
+                      if(a.name=="index"){
+                          a.value=index;
+                      }else if(a.name=="geotype"){
+                        a.value=geotype
+                      }else if(a.type=="integer" && a.auto==true){
+                        var index2=GL.datatable.getFieldIndex(that.layer.id,a);
+                        a.value=index2;
+                        that.auto.push(a);
+                      }else if(a.type=="integer" && a.default==true){
+                        a.value=a.defaultInteger;
+                      }else if(a.type=="double" && a.default==true){
+                        a.value=a.defaultDouble;
+                      }else if(a.default==true && a.type=="string"){
+                        a.value=a.defaultString;
+                      }else if(a.default==true && a.type=="boolean"){
+                        a.value=a.defaultBoolean;
+                      }else if(a.default==true && a.type=="date"){
+                        a.value=a.defaultDate;
+                      }else{
                         a.value="";
+                      }
+                      
+                      if(a.unique==true && a.name!="index"){
+                        that.uniqueColumn.push(a.name);
+                      }
+                      
                     })
                     that.button=true;
                 });
@@ -206,35 +300,99 @@ Vue.component('drawvector', {
       },
       save:function(){
         var that=this;
-        var a=this.fields;
-        GL.draw.deleteAll();
-        var d={};
-        for(var i=0;i<a.length;i++){
-            d[a[i].name]=a[i].value;
-        }
-        this.drawngeojson.properties=d;
-        this.geojson.features.push(this.drawngeojson);
-        GL.map.getSource(this.layer.id).setData(this.geojson);
+        if(this.uniqueColumn.length>0){
+          var vals=[];
+          var control=false;
+          for(var i=0;i<this.uniqueColumn.length;i++){
+            var a=this.fields.findIndex(x => x.name==that.uniqueColumn[i]);
+            var val=this.fields[a].value;
+            var b=this.inputs.findIndex(x => x==val);
+            if(b==-1){
+              vals.push(val);
+            }else{
+              GL.uyari("Aynı veri eklenemez");
+              break
+            }
 
-        var fields = GL.datatable.getFields(this.layer.id);
-        var columns = GL.datatable.readyColumns(fields);
-        var data = GL.datatable.getData(this.geojson,fields);
-        setTimeout(function(){
-            that.table = new Tabulator("#datatableView1", {
-              layout:"fitData",
-              height:GL.config.clientHeight+'px',
-              resizableColumns:false,
-              columns:columns
-            });
+            if(i+1==this.uniqueColumn.length){
+              control=true;
+              for(var k=0;k<vals.length;k++){
+                that.inputs.push(vals[k]);
+              }
+            }
+          }
+          if(control==true){
+            var a=this.fields;
+          
+            for (var j=0;j<this.auto.length;j++){
+              GL.datatable.refreshFieldIndex(this.layer.id,this.auto[j]);
+            }
+            GL.draw.deleteAll();
+            var d={};
+            for(var i=0;i<a.length;i++){
+                d[a[i].name]=a[i].value;
+            }
+            this.drawngeojson.properties=d;
+            this.geojson.features.push(this.drawngeojson);
+            GL.map.getSource(this.layer.id).setData(this.geojson);
+    
+            var fields = GL.datatable.getFields(this.layer.id);
+            var columns = GL.datatable.readyColumns(fields);
+            var data = GL.datatable.getData(this.geojson,fields);
             setTimeout(function(){
-              that.table.setData(data);
-              that.button=false;
-              that.fields=[];
-              that.setPage('tab3');
-              GL.bilgi("Kayıt Edildi");
+              that.table = new Tabulator("#datatableView1", {
+                layout:"fitData",
+                height:GL.config.clientHeight+'px',
+                resizableColumns:false,
+                columns:columns
+              });
+              setTimeout(function(){
+                that.table.setData(data);
+                that.button=false;
+                that.fields=[];
+                that.setPage('tab3');
+                GL.bilgi("Kayıt Edildi");
+              },10);
+              
             },10);
-            
-          },10);
+          }
+
+        }else{
+          var a=this.fields;
+          
+          for (var j=0;j<this.auto.length;j++){
+            GL.datatable.refreshFieldIndex(this.layer.id,this.auto[j]);
+          }
+          GL.draw.deleteAll();
+          var d={};
+          for(var i=0;i<a.length;i++){
+              d[a[i].name]=a[i].value;
+          }
+          this.drawngeojson.properties=d;
+          this.geojson.features.push(this.drawngeojson);
+          GL.map.getSource(this.layer.id).setData(this.geojson);
+  
+          var fields = GL.datatable.getFields(this.layer.id);
+          var columns = GL.datatable.readyColumns(fields);
+          var data = GL.datatable.getData(this.geojson,fields);
+          setTimeout(function(){
+              that.table = new Tabulator("#datatableView1", {
+                layout:"fitData",
+                height:GL.config.clientHeight+'px',
+                resizableColumns:false,
+                columns:columns
+              });
+              setTimeout(function(){
+                that.table.setData(data);
+                that.button=false;
+                that.fields=[];
+                that.setPage('tab3');
+                GL.bilgi("Kayıt Edildi");
+              },10);
+              
+            },10);
+        }
+        
       }
   },
   template:
@@ -279,16 +437,40 @@ Vue.component('drawvector', {
 
                 '<div v-for="item in fields" class="form-group boxed">'+
                     '<div class="input-wrapper">'+
-                        '<label v-if="item.type==\'string\'" class="label" for="layerfield">{{item.name}}</label>'+
-                            '<input v-if="item.type==\'string\'" v-model="item.value" type="text" class="form-control" id="layerfield" placeholder="Değer Giriniz">'+
+                        '<label v-if="item.name==\'index\'" class="label" for="layerfield2">{{item.name}}</label>'+
+                            '<input v-if="item.name==\'index\'" v-model="item.value" type="number" class="form-control" id="layerfield2" placeholder="Index" disabled>'+
+                                '<i class="clear-input">'+
+                                    '<ion-icon name="close-circle"></ion-icon>'+
+                                '</i>'+
+                    '</div>'+
+
+                    '<div class="input-wrapper">'+
+                        '<label v-if="item.name==\'geotype\'" class="label" for="layerfield3">{{item.name}}</label>'+
+                            '<input v-if="item.name==\'geotype\'" v-model="item.value" type="text" class="form-control" id="layerfield" placeholder="Geotype" disabled>'+
+                                '<i class="clear-input">'+
+                                    '<ion-icon name="close-circle"></ion-icon>'+
+                                '</i>'+
+                    '</div>'+
+
+                    '<div class="input-wrapper">'+
+                        '<label v-if="item.type==\'string\' && item.name!=\'geotype\'" class="label" for="layerfield">{{item.name}}</label>'+
+                            '<input v-if="item.type==\'string\' && item.name!=\'geotype\'" v-model="item.value" type="text" class="form-control" id="layerfield3" placeholder="Değer Giriniz">'+
                                 '<i class="clear-input">'+
                                     '<ion-icon name="close-circle"></ion-icon>'+
                                 '</i>'+
                     '</div>'+
 
                     '<div  class="input-wrapper">'+
-                        '<label v-if="item.type==\'integer\' || item.type==\'double\'" class="label"  for="layerfield">{{item.name}}</label>'+
-                            '<input v-if="item.type==\'integer\' || item.type==\'double\'" v-model="item.value" type="number" class="form-control" id="layerfield" placeholder="Değer Giriniz">'+
+                        '<label v-if="item.type==\'integer\' && item.name!=\'index\'" class="label"  for="layerfield">{{item.name}}</label>'+
+                            '<input v-if="item.type==\'integer\' && item.name!=\'index\'" v-model="item.value" type="number" class="form-control" id="layerfield" placeholder="Değer Giriniz" :disabled="item.protecth == false">'+
+                                '<i class="clear-input">'+
+                                    '<ion-icon name="close-circle"></ion-icon>'+
+                                '</i>'+
+                    '</div>'+
+
+                    '<div  class="input-wrapper">'+
+                        '<label v-if="item.type==\'double\' && item.name!=\'index\'" class="label"  for="layerfield">{{item.name}}</label>'+
+                            '<input v-if="item.type==\'double\' && item.name!=\'index\'" v-model="item.value" type="number" class="form-control" id="layerfield" placeholder="Değer Giriniz" :disabled="item.protecth == false">'+
                                 '<i class="clear-input">'+
                                     '<ion-icon name="close-circle"></ion-icon>'+
                                 '</i>'+
@@ -296,14 +478,14 @@ Vue.component('drawvector', {
                     
                     '<div  class="input-wrapper">'+
                         '<label v-if="item.type==\'date\'" class="label" for="layerfield">{{item.name}}</label>'+
-                            '<input v-if="item.type==\'date\'" v-model="item.value" type="date" class="form-control" id="layerfield" placeholder="Değer Giriniz">'+
+                            '<input v-if="item.type==\'date\'" v-model="item.value" type="date" class="form-control" id="layerfield" placeholder="Değer Giriniz" :disabled="item.protecth == false">'+
                                 '<i class="clear-input">'+
                                     '<ion-icon name="close-circle"></ion-icon>'+
                                 '</i>'+
                     '</div>'+
 
-                    '<div class="custom-control custom-checkbox">'+
-                        '<input v-if="item.type==\'boolean\'" v-model="item.value" type="checkbox" class="custom-control-input" id="customCheck4">'+
+                    '<div v-if="item.type==\'boolean\'" class="custom-control custom-checkbox">'+
+                        '<input v-if="item.type==\'boolean\'" v-model="item.value" type="checkbox" class="custom-control-input" id="customCheck4" :disabled="item.protecth == false">'+
                         '<label v-if="item.type==\'boolean\'" class="custom-control-label" for="customCheck4">{{item.name}}</label>'+
                     '</div>'+
 

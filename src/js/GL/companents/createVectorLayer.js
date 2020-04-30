@@ -55,7 +55,13 @@ Vue.component('createvectorlayer', {
                 unique:false,
                 auto:false,
                 edit:true,
+                default:false,
                 startValue:0,
+                defaultValueString:"",
+                defaultValueInteger:0,
+                defaultValueDouble:0.0,
+                defaultValueBoolean:true,
+                defaultValueDate:null,
                 recovery:false,
                 service:true
               },
@@ -267,6 +273,13 @@ Vue.component('createvectorlayer', {
               }else{
                 obj["auto"]=false;
               }
+
+              if(this.layer.default==true){
+                obj["default"]=true;
+                obj["defaultInteger"]=parseInt(this.layer.defaultValueInteger,10);
+              }else{
+                obj["default"]=false;
+              }
             }
 
             if(this.layer.edit==true){
@@ -274,6 +287,43 @@ Vue.component('createvectorlayer', {
             }else{
               obj["protecth"]=false;
             }
+
+            if(this.dataTypes.selected=='string'){
+              if(this.layer.default==true){
+                obj["default"]=true;
+                obj["defaultString"]=this.layer.defaultValueString;
+              }else{
+                obj["default"]=false;
+              }
+            }
+
+            if(this.dataTypes.selected=='double'){
+              if(this.layer.default==true){
+                obj["default"]=true;
+                obj["defaultDouble"]=Number(this.layer.defaultValueDouble);
+              }else{
+                obj["default"]=false;
+              }
+            }
+
+            if(this.dataTypes.selected=='boolean'){
+              if(this.layer.default==true){
+                obj["default"]=true;
+                obj["defaultBoolean"]=this.layer.defaultValueBoolean;
+              }else{
+                obj["default"]=false;
+              }
+            }
+
+            if(this.dataTypes.selected=='date'){
+              if(this.layer.default==true){
+                obj["default"]=true;
+                obj["defaultDate"]=this.layer.defaultValueDate;
+              }else{
+                obj["default"]=false;
+              }
+            }
+
             this.layer.fields.push(obj);
             
             GL.bilgi(fieldName+" Sütunu Eklenmiştir");
@@ -304,6 +354,7 @@ Vue.component('createvectorlayer', {
       createVectorLayer:function(){
         GL.createVectorLayer(this.layer);
         GL.bilgi("Vektör Katman Oluşturuldu");
+        this.clearValues();
         this.close();
       },
       changeTab:function(id){
@@ -329,6 +380,36 @@ Vue.component('createvectorlayer', {
           this.setPage('tab1')
         }
 
+      },
+      change:function(event){
+        if(this.layer.default==true){
+          if(this.layer.auto==true){
+            if(event=="default"){
+              this.layer.auto=false
+            }else if(event=="auto"){
+              this.layer.default=false
+            }
+          }
+        }
+      },
+      getDate:function(){
+        var date=GL.getDate();
+        var date2=date.split(" ");
+        console.log(date2);
+        this.defaultValueDate=date2[0];
+        
+      },
+      clearValues:function(){
+        this.layer.name="";
+        this.fieldName="";
+        this.unique=false;
+        this.auto=false;
+        this.edit=true;
+        this.default=false;
+        this.layer.fields=[
+          {name:'index',type:'integer',unique:true,auto:true,protecth:true},
+          {name:'geotype',type:'string',protecth:true},
+        ]
       }
 
   },
@@ -666,11 +747,69 @@ Vue.component('createvectorlayer', {
                      '</li>'+
                     '</ul>'+
 
+                    '<ul class="listview simple-listview">'+
+                     '<li style="padding:0;">'+
+                       '<div style="font-size: 12px;">Başlangıç Değeri ({{layer.default==true?\'Açık\':\'Kapalı\'}})</div>'+
+                       '<div class="custom-control custom-switch">'+
+                       '<input @change="change(\'default\')" id="stylingVectorCheckbox" type="checkbox" v-model="layer.default" class="custom-control-input">'+
+                           '<label for="stylingVectorCheckbox" class="custom-control-label"></label>'+
+                       '</div>'+
+                     '</li>'+
+                    '</ul>'+
+
+                    '<div v-if="layer.default==true && dataTypes.selected==\'string\'" class="form-group basic">'+
+                      '<div class="input-wrapper">'+
+                        '<label class="label">Başlangıç Değeri :</label>'+
+                        '<input type="text" class="form-control" v-model="layer.defaultValueString" placeholder="Başlangıç Değeri Giriniz">'+
+                        '<i class="clear-input"> <ion-icon name="close-circle"></ion-icon></i>'+
+                      '</div>'+
+                    '</div>'+
+
+                    '<div v-if="layer.default==true && dataTypes.selected==\'integer\'" class="form-group basic">'+
+                      '<div class="input-wrapper">'+
+                        '<label class="label">Başlangıç Değeri :</label>'+
+                        '<input type="number" class="form-control" v-model="layer.defaultValueInteger" placeholder="Başlangıç Değeri Giriniz">'+
+                        '<i class="clear-input"> <ion-icon name="close-circle"></ion-icon></i>'+
+                      '</div>'+
+                    '</div>'+
+
+                    '<div v-if="layer.default==true && dataTypes.selected==\'double\'" class="form-group basic">'+
+                      '<div class="input-wrapper">'+
+                        '<label class="label">Başlangıç Değeri :</label>'+
+                        '<input type="number" class="form-control" v-model="layer.defaultValueDouble" placeholder="Başlangıç Değeri Giriniz">'+
+                        '<i class="clear-input"> <ion-icon name="close-circle"></ion-icon></i>'+
+                      '</div>'+
+                    '</div>'+
+
+                    '<div v-if="layer.default==true && dataTypes.selected==\'boolean\'" class="form-group basic">'+
+                      '<div class="input-wrapper">'+
+                        '<div class="custom-control custom-checkbox">'+
+                            '<input type="checkbox" v-model="layer.defaultValueBoolean" class="custom-control-input" id="customCheck4">'+
+                            '<label class="custom-control-label" for="customCheck4">{{layer.defaultValueBoolean==true?\'Doğru\':\'Yanlış\'}}</label>'+
+                        '</div>'+
+                      '</div>'+
+                    '</div>'+
+
+                    '<div v-if="layer.default==true && dataTypes.selected==\'date\'" class="form-group basic">'+
+                        '<div  class="input-wrapper">'+
+                        '<label class="label" for="layerfield">Başlangıç Tarihi</label>'+
+                            '<input v-model="layer.defaultValueDate" type="date" class="form-control" id="layerfield" placeholder="Değer Giriniz">'+
+                                '<i class="clear-input">'+
+                                    '<ion-icon name="close-circle"></ion-icon>'+
+                                '</i>'+
+
+                        //'<div class="custom-control custom-checkbox">'+
+                        //  '<input type="checkbox" @change="getDate" class="custom-control-input" id="customCheck4">'+
+                        //'<label class="custom-control-label" for="customCheck4">Bugünün tarihini al</label>'+
+                        //    '</div>'+
+                        '</div>'+
+                    '</div>'+
+
                     '<ul v-if="dataTypes.selected==\'integer\'" class="listview simple-listview">'+
                      '<li style="padding:0;">'+
                        '<div style="font-size: 12px;">Otomatik Sayı Artırma ({{layer.auto==true?\'Açık\':\'Kapalı\'}})</div>'+
                        '<div class="custom-control custom-switch">'+
-                       '<input id="stylingVectorCheckbox7" type="checkbox" v-model="layer.auto" class="custom-control-input">'+
+                       '<input @change="change(\'auto\')" id="stylingVectorCheckbox7" type="checkbox" v-model="layer.auto" class="custom-control-input">'+
                            '<label for="stylingVectorCheckbox7" class="custom-control-label"></label>'+
                        '</div>'+
                      '</li>'+

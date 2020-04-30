@@ -1010,7 +1010,6 @@ GL.layerbox = {
 };
 
 GL.changeLayerColor=function(source,color){
-  console.log(source);
   GL.map.setPaintProperty(source.layers[0], 'circle-color', color); //point
   GL.map.setPaintProperty(source.layers[1], 'line-color', color);   //line
   GL.map.setPaintProperty(source.layers[2], 'fill-color', color);   // Polygon
@@ -1092,7 +1091,17 @@ GL.renkAl = function(callback){
 
 
 GL.datatable = {
-  getIndex:function(layerId){
+  refreshFieldIndex:function(souceId,field){
+    var source = GL.layerbox.getSource(souceId);
+    var a=source.fields.findIndex(x => x.name==field.name);
+    source.fields[a].index++;
+  },
+  getFieldIndex:function(souceId,field){
+    var source = GL.layerbox.getSource(souceId);
+    var a=source.fields.findIndex(x => x.name==field.name);
+    return source.fields[a].index;
+  },
+  getIndex:function(souceId){
     var source = GL.layerbox.getSource(souceId);
     source.lastIndex++;
     return source.lastIndex;
@@ -1195,10 +1204,9 @@ GL.createVectorLayer=function(data){
   }
 
   var layerid=Date.now().toString();
-  console.log(data);
   GL.map.addSource(layerid, {'type': 'geojson', 'data':source});
 
-  var inf={id:layerid,fields:data.fields,name:data.name,type:data.type.selected,layers:[layerid+"-point",layerid+"-line",layerid+"-polygon"],geojson:source};
+  var inf={id:layerid,fields:data.fields,name:data.name,type:data.type.selected,layers:[layerid+"-point",layerid+"-line",layerid+"-polygon"],geojson:source,lastIndex:0};
   GL.layerbox.sources.push(inf);
 
   //visibility
@@ -1592,3 +1600,252 @@ GL.addWMTSLayer=function(url,layerid,layername){
   var infLayer1={id:layerid+"-raster",source:layerid,type:inf.type,features:"",color:""};
   GL.layerbox.layers.push(infLayer1);
 }
+
+GL.addMVTLayer=function(layerid,url,sourcelayer,layername,minzoom,maxzoom){
+  //'https://d25uarhxywzl1j.cloudfront.net/v0.1/{z}/{x}/{y}.mvt'
+  // source-layer: 'mapillary-sequences'
+    GL.map.addSource(layerid, {
+        'type': 'vector',
+        'tiles': [url],
+        'minzoom': Number(minzoom),
+        'maxzoom': Number(maxzoom)
+    });
+
+    var inf={id:layerid,fields:[],name:layername,type:'wms',layers:[layerid+"-point",layerid+"-line",layerid+"-polygon"],geojson:'',lastIndex:0};
+    GL.layerbox.sources.push(inf);
+
+    GL.map.addLayer(
+        {
+        'id': layerid+"-line",
+        'type': 'line',
+        'source': layerid,
+        'source-layer': sourcelayer,
+        'paint': {
+        'line-opacity': 0.6,
+        'line-color': '#35af6d',
+        'line-width': 2
+        },
+        'filter': ['==', '$type', 'LineString']
+        }
+    );
+
+    GL.map.addLayer(
+        {
+        'id': layerid+"-point",
+        'type': 'circle',
+        'source': layerid,
+        'source-layer': sourcelayer,
+        'paint': {
+        'circle-radius': 3,
+        'circle-color': '#35af6d',
+        'circle-stroke-width': 1,
+        'circle-stroke-color':"#333333"
+        },
+        'filter': ['==', '$type', 'Point']
+        }
+    );
+
+    GL.map.addLayer(
+        {
+        'id': layerid+"-polygon",
+        'type': 'fill',
+        'source': layerid,
+        'source-layer': sourcelayer,
+        'paint': {
+            'fill-color': '#35af6d',
+            'fill-opacity': 0.7
+        },
+        'filter': ['==', '$type', 'Polygon']
+        }
+    );
+
+    setTimeout(function(){
+      var features=GL.layerbox.getLayerFeature(layerid,layerid+'-point');
+      var features2=GL.layerbox.getLayerFeature(layerid,layerid+'-line');
+      var features3=GL.layerbox.getLayerFeature(layerid,layerid+'-polygon');
+  
+      var infLayer1={id:layerid+"-point",source:layerid,type:inf.type,features:features,color:"#35af6d"};
+      var infLayer2={id:layerid+"-line",source:layerid,type:inf.type,features:features2,color:"#35af6d"};
+      var infLayer3={id:layerid+"-polygon",source:layerid,type:inf.type,features:features3,color:"#35af6d"};
+      GL.layerbox.layers.push(infLayer1);
+      GL.layerbox.layers.push(infLayer2);
+      GL.layerbox.layers.push(infLayer3);
+  
+    },100)
+}
+
+GL.addPBFLayer=function(layerid,url,sourcelayer,layername,minzoom,maxzoom){
+  //http://{a-d}.maptileserver.xyz:8000/services/osm_vectortiles/tiles/{z}/{x}/{y}.pbf
+  //https://map.infrapedia.com/geoserver/gwc/service/tms/1.0.0/infrapedia%3Aall_point@EPSG%3A900913@pbf/{z}/{x}/{y}.pbf?t=${tmm}
+  //https://d2jyc3sz0j3f3j.cloudfront.net/soi151_vectortiles/{z}/{x}/{y}.pbf
+  // source-layer: 'all_point'
+    GL.map.addSource(layerid, {
+        'type': 'vector',
+        'tiles': [url],
+        'minzoom': Number(minzoom),
+        'maxzoom': Number(maxzoom)
+    });
+
+    var inf={id:layerid,fields:[],name:layername,type:'wms',layers:[layerid+"-point",layerid+"-line",layerid+"-polygon"],geojson:'',lastIndex:0};
+    GL.layerbox.sources.push(inf);
+
+    GL.map.addLayer(
+        {
+        'id': layerid+"-line",
+        'type': 'line',
+        'source': layerid,
+        'source-layer': sourcelayer,
+        'paint': {
+        'line-opacity': 0.6,
+        'line-color': '#35af6d',
+        'line-width': 2
+        },
+        'filter': ['==', '$type', 'LineString']
+        }
+    );
+
+    GL.map.addLayer(
+        {
+        'id': layerid+"-point",
+        'type': 'circle',
+        'source': layerid,
+        'source-layer': sourcelayer,
+        'paint': {
+        'circle-radius': 3,
+        'circle-color': '#35af6d',
+        'circle-stroke-width': 1,
+        'circle-stroke-color':"#333333"
+        },
+        'filter': ['==', '$type', 'Point']
+        }
+    );
+
+    GL.map.addLayer(
+        {
+        'id': layerid+"-polygon",
+        'type': 'fill',
+        'source': layerid,
+        'source-layer': sourcelayer,
+        'paint': {
+            'fill-color': '#35af6d',
+            'fill-opacity': 0.7
+        },
+        'filter': ['==', '$type', 'Polygon']
+        }
+    );
+
+    setTimeout(function(){
+      var features=GL.layerbox.getLayerFeature(layerid,layerid+'-point');
+      var features2=GL.layerbox.getLayerFeature(layerid,layerid+'-line');
+      var features3=GL.layerbox.getLayerFeature(layerid,layerid+'-polygon');
+  
+      var infLayer1={id:layerid+"-point",source:layerid,type:inf.type,features:features,color:"#35af6d"};
+      var infLayer2={id:layerid+"-line",source:layerid,type:inf.type,features:features2,color:"#35af6d"};
+      var infLayer3={id:layerid+"-polygon",source:layerid,type:inf.type,features:features3,color:"#35af6d"};
+      GL.layerbox.layers.push(infLayer1);
+      GL.layerbox.layers.push(infLayer2);
+      GL.layerbox.layers.push(infLayer3);
+  
+    },100);
+}
+
+GL.rondom = function(min,max){
+  return Math.floor(Math.random() * (max - min) ) + min;
+}
+
+GL.getRondomColor = function(){
+  return GL.config.colors[GL.rondom(0,19)];
+}
+
+GL.style = {
+  style:function(obj){
+    var result = {};
+    switch(obj.type){
+      case false:{
+        var rondomColor = GL.getRondomColor();
+        result["point"] = GL.style.point({"circle-color":rondomColor});
+        result["line"] = GL.style.line({"line-color":rondomColor});
+        result["polygon"] = GL.style.polygon({"fill-color":rondomColor});
+        break;
+      }
+      case "color":{
+        result["point"] = GL.style.point({"circle-color":obj[obj.type].color});
+        result["line"] = GL.style.line({"line-color":obj[obj.type].color});
+        result["polygon"] = GL.style.polygon({"fill-color":obj[obj.type].color});
+        break;
+      }
+      case "colors":{
+        result["point"] = GL.style.point({"circle-color":obj[obj.type].point.color});
+        result["line"] = GL.style.line({"line-color":obj[obj.type].line.color});
+        result["polygon"] = GL.style.polygon({"fill-color":obj[obj.type].polygon.color});
+        break;
+      }
+      case "style":{
+        result["point"] = GL.style.point({"circle-color":obj[obj.type].point});
+        result["line"] = GL.style.line({"line-color":obj[obj.type].line});
+        result["polygon"] = GL.style.polygon({"fill-color":obj[obj.type].polygon});
+        break;
+      }
+    }
+    return result;
+  },
+  polygon:function(obj){
+    var style = {
+      "fill-color":obj["fill-color"] || "#ff5722",
+      "fill-opacity":obj["fill-opacity"] || 1,
+      "fill-outline-color":obj["fill-outline-color"] || "#ff5722",
+      "fill-outline-opacity":obj["fill-outline-opacity"] || 1
+    };
+    return style;
+  },
+  line:function(obj){
+    var style = {
+      "line-cap":obj["line-cap"] || "round",
+      "line-color":obj["line-color"] || "#ff5722",
+      "line-dasharray":obj["line-dasharray"] || 0,
+      "line-join":obj["line-join"] || "round",
+      "line-opacity":obj["line-opacity"] || 1,
+      "line-width":obj["line-width"] || 3
+    };
+    return style;
+  },
+  point:function(obj){
+    var style = {
+      "circle-radius": obj["circle-radius"] || 6,
+      "circle-opacity":obj["circle-opacity"] || 1,
+      "circle-color": obj["circle-color"] || '#1464D7',
+      "circle-stroke-width": obj["circle-stroke-width"] || 1,
+      "circle-stroke-opactiy": obj["circle-stroke-opactiy"] || 1,
+      "circle-stroke-color": obj["circle-stroke-color"] || "#00234E"
+    };
+    return style;
+  },
+  label:function(obj){
+    var style = {};
+    style = {
+      "text-field": obj["text-field"] || ["get", "name"],
+      "symbol-placement": obj["symbol-placement"] || 'symbol',
+      "text-font": obj["text-font"] || ['DIN Offc Pro Medium', 'Arial Unicode MS Bold'],
+      "text-size": obj["text-size"] || 10,
+      "text-justify": obj["text-justify"] || 'right',
+      "text-anchor": obj["text-anchor"] || 'bottom',
+      "text-offset": obj["text-offset"] || [0, 0.1]
+    };
+    switch(obj.type){
+      case "expressions":{
+        style["text-field"] = obj["field"]
+      break;
+      }
+      case "column":{
+        style["text-field"] = "{"+obj["field"]+"}"
+      break;
+      }
+      case "multiColumn":{
+        style["text-field"] = obj["field"]
+      break;
+      }
+    }
+    return style;
+  }
+};
+

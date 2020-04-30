@@ -364,7 +364,7 @@ Vue.component('distancecalculate', {
         }
 
         var bbox = turf.bbox(geojson);
-        GL.ZoomLayer(bbox);
+        GL.zoomToBbox(bbox);
 
         geojson2.id=1;
         geojson3.id=2;

@@ -65,6 +65,11 @@ var lang = {
       spatial:'Mekansal Veri Sorgulama',
       textquery:'Sözel Veri Sorgulama',
       language:'Diller',
+      catalog:"Harita Katalogları",
+      catalogUpload:"Katalog Yükle",
+      catalogCreate:"Katalog Oluştur",
+      catalogList:"Katalogları Listele",
+      catalogHistory:"Geçmişte Eklenen Katmanlar",
     },
     fileupload:{
       label:'Vektör Dosya Ekleme',

@@ -21,6 +21,37 @@ Vue.component('mymenu', {
             submenu:[]
           },
           {
+            id:'catalog',
+            title:GL.lang.panel.mymenu.catalog,
+            icon:'book-outline',
+            submenu:[
+              {
+                id: 'catalogUpload',
+                title: GL.lang.panel.mymenu.catalogUpload,
+                icon: 'chevron-forward-outline',
+                submenu:[]
+              },
+              {
+                id: 'catalogCreate',
+                title: GL.lang.panel.mymenu.catalogCreate,
+                icon: 'chevron-forward-outline',
+                submenu:[]
+              },
+              {
+                id: 'catalogList',
+                title: GL.lang.panel.mymenu.catalogList,
+                icon: 'chevron-forward-outline',
+                submenu:[]
+              },
+              {
+                id: 'catalogHistory',
+                title: GL.lang.panel.mymenu.catalogHistory,
+                icon: 'chevron-forward-outline',
+                submenu:[]
+              }
+            ]
+          },
+          {
             id: 'layerservice',
             title: GL.lang.panel.mymenu.layerservice,
             icon: 'layers-outline',
@@ -269,6 +300,14 @@ Vue.component('mymenu', {
       e.preventDefault();
       GL.titresim();
       switch (menuid) {
+        case 'pbf': {
+          addpbf.$children[0].open();
+          break;
+        }
+        case 'mvt': {
+          addmvt.$children[0].open();
+          break;
+        }
         case 'wmts': {
           addwmts.$children[0].open();
           break;
