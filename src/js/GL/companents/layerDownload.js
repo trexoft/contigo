@@ -100,6 +100,15 @@ Vue.component('layerdownload', {
                         });
 
                         GL.downloadFile('xls',features,that.filename);
+                    }else if(that.fileType=='ncn'){
+                        var reader = new ol.format.GeoJSON();
+
+                        var features=reader.readFeatures(source.geojson,{
+                            featureProjection: 'EPSG:'+that.epsglist.selected,
+                            dataProjection: 'EPSG:4326'
+                        });
+
+                        GL.downloadFile('ncn',features,that.filename);
                     }
                 }else if(that.dataType=="chosendata"){
 
@@ -160,6 +169,7 @@ Vue.component('layerdownload', {
                                                 '<option value="gpx">GPX</option>'+
                                                 '<option value="shp">Shapefile</option>'+
                                                 '<option value="xls">Excel</option>'+
+                                                '<option value="ncn">NCN</option>'+
                                             '</select>'+
                                     '</div>'+
                                 '</div>'+

@@ -608,6 +608,7 @@ GL.addGeojsonToLayer=function(geojson,layerid,color,info){
     props={};
   }
   var fields = GL.datatable.getFieldsFromProperties(props);
+  console.log(fields);
   var indexhave = props["index"]!==undefined;
   var index = 0;
   if(indexhave){
@@ -881,6 +882,77 @@ GL.downloadFile=function(fileType,features,fileName){
         }
       });
       GL.jsonToExcel(excelJSON, fileName);
+    break;
+    case "ncn":
+      var arr = [];
+      var ncntext = "";
+      features.map(function (feature) {
+        if (feature.getGeometry() !== null) {
+          var type = feature.getGeometry().getType();
+          var props = feature.getProperties();
+
+          if (type == "Point") {
+            var obj = {};
+            var coordinates = feature.getGeometry().getCoordinates();
+            obj["lng"] = coordinates[0];
+            obj["lat"] = coordinates[1];
+
+            if (typeof props["elevation"] !== "undefined") {
+              obj["elv"] = props["elevation"];
+            }
+
+            arr.push(obj);
+          }
+
+          if (type == "LineString") {
+            var coordinates = feature.getGeometry().getCoordinates();
+            coordinates.map(function (coord, y) {
+              var obj = {};
+
+              if (typeof props["elevation"] !== "undefined") {
+                obj["elv"] = props["elevation"];
+              }
+
+              obj["lng"] = coord[0];
+              obj["lat"] = coord[1];
+              arr.push(obj);
+            });
+          }
+
+          if (type == "Polygon") {
+            var coordinates = feature.getGeometry().getCoordinates();
+
+            for (var a = 0; a < coordinates.length; a++) {
+              coordinates[a].map(function (coord, y) {
+                var obj = {};
+
+                if (typeof props["elevation"] !== "undefined") {
+                  obj["elv"] = props["elevation"];
+                }
+
+                obj["lng"] = coord[0];
+                obj["lat"] = coord[1];
+                arr.push(obj);
+
+                if (y == 0) {
+                  arr.splice(arr.length - 1, 1);
+                }
+              });
+            }
+          }
+        }
+      });
+      arr.map(function (nokta, i) {
+        var i2 = i + 1;
+
+        if (typeof nokta["elv"] !== "undefined") {
+          ncntext += i2 + ' ' + nokta.lng + ' ' + nokta.lat + ' ' + nokta["elv"] + ' 0 "" "" ""\n';
+        } else {
+          ncntext += i2 + ' ' + nokta.lng + ' ' + nokta.lat + ' 0 0 "" "" ""\n';
+        }
+      });
+      download(ncntext, fileName + ".ncn", "text/ncn");
+
     break;
   }
 }
@@ -1781,9 +1853,9 @@ GL.style = {
         break;
       }
       case "style":{
-        result["point"] = GL.style.point({"circle-color":obj[obj.type].point});
-        result["line"] = GL.style.line({"line-color":obj[obj.type].line});
-        result["polygon"] = GL.style.polygon({"fill-color":obj[obj.type].polygon});
+        result["point"] = GL.style.point({"circle-color":obj[obj.type].point["circle-color"]});
+        result["line"] = GL.style.line({"line-color":obj[obj.type].line["line-color"]});
+        result["polygon"] = GL.style.polygon({"fill-color":obj[obj.type].polygon["polygon.fill-color"]});
         break;
       }
     }
@@ -1794,16 +1866,16 @@ GL.style = {
       "fill-color":obj["fill-color"] || "#ff5722",
       "fill-opacity":obj["fill-opacity"] || 1,
       "fill-outline-color":obj["fill-outline-color"] || "#ff5722",
-      "fill-outline-opacity":obj["fill-outline-opacity"] || 1
+      //"fill-outline-opacity":obj["fill-outline-opacity"] || 1
     };
     return style;
   },
   line:function(obj){
     var style = {
-      "line-cap":obj["line-cap"] || "round",
+      //"line-cap":obj["line-cap"] || "round",
       "line-color":obj["line-color"] || "#ff5722",
-      "line-dasharray":obj["line-dasharray"] || 0,
-      "line-join":obj["line-join"] || "round",
+      //"line-dasharray":obj["line-dasharray"] || [0],
+      //"line-join":obj["line-join"] || "round",
       "line-opacity":obj["line-opacity"] || 1,
       "line-width":obj["line-width"] || 3
     };
@@ -1815,7 +1887,7 @@ GL.style = {
       "circle-opacity":obj["circle-opacity"] || 1,
       "circle-color": obj["circle-color"] || '#1464D7',
       "circle-stroke-width": obj["circle-stroke-width"] || 1,
-      "circle-stroke-opactiy": obj["circle-stroke-opactiy"] || 1,
+      "circle-stroke-opacity": obj["circle-stroke-opacity"] || 1,
       "circle-stroke-color": obj["circle-stroke-color"] || "#00234E"
     };
     return style;
@@ -1849,3 +1921,918 @@ GL.style = {
   }
 };
 
+GL.uploadCatalog=function(){
+  var fileElement = document.createElement('input');
+  fileElement.type = 'file';
+  fileElement.accept = '.json';
+
+  setTimeout(function () {
+    fileElement.click();
+  }, 100);
+
+  fileElement.addEventListener('input', function (e) {
+    var file = e.target.files[0];
+    var reader = new FileReader();
+    var fileName = file.name.split('.')[0];
+    reader.addEventListener("load", function (e) {
+      var data=reader.result;
+      if (typeof data == 'string') {
+        data = JSON.parse(data);
+      }
+      if(data.type=="gislayer-catalog-file"){
+        catalogload.$children[0].open(data);
+      }else{
+        GL.uyari("Katalog dosyası olduğuna emin olunuz");
+      }
+      
+    })
+    reader.readAsText(file);
+  })
+};
+
+
+GL.creteCatalogLayer=function(settings){
+  if(settings.darkmode==true && GL.config.darkMode==false){
+    mymenu.$children[0].darkMode();
+  }else if(settings.darkmode==false && GL.config.darkMode==true){
+    mymenu.$children[0].darkMode();
+  }
+
+  GL.map.flyTo({
+    center: settings.center,
+    essential: true
+  })
+
+  GL.map.setZoom(settings.zoom);
+  GL.map.setPitch(settings.pitch);
+  GL.map.setPitch(settings.rotate);
+  GL.map.setBearing(settings.rotate);
+
+  switch(settings.method){
+    case 'vector-custom':
+      var source={
+        'type': 'FeatureCollection',
+        'features': []
+      }
+      //var settings={catalogname:catalogname,catalogid:catalogid,center:center,zoom:zoom,pitch:pitch,rotate:rotate,darkmode:darkmode,autoload:autoload, checked:checked, epsg:epsg, fields:fields, type:geotype, id:id, indexcolumn:indexcolumn, lastindex:lastindex, localrecovery:localrecovery, method:method, name:name, selectedindex:selectedindex, style:style,systemrecovery:systemrecovery };
+      GL.map.addSource(settings.id, {'type': 'geojson', 'data':source});
+      var inf=settings;
+      inf["layers"]=[settings.id+"-point",settings.id+"-line",settings.id+"-polygon"];
+      inf["geojson"]=source;
+      //var inf={id:settings.id,fields:settings.fields,darkmode:settings.darkmode,name:data.name,autoload:settings.autoload,type:settings.geotype,layers:[layerid+"-point",layerid+"-line",layerid+"-polygon"],geojson:source,lastIndex:settings.lastindex,indexcolumn:settings.indexcolumn};
+      GL.layerbox.sources.push(inf);
+    
+      var color=GL.style.style(inf.style);
+      
+        GL.map.addLayer({
+          'id': inf.id+'-point',
+          'type': 'circle',
+          'source': settings.id,
+              'paint': color.point,
+              'filter': ['==', '$type', 'Point']
+        });
+      
+      
+      GL.map.addLayer({
+          'id': inf.id+'-polygon',
+          'type': 'fill',
+          'source': settings.id,
+              'paint': color.polygon,
+              'filter': ['==', '$type', 'Polygon']
+      });
+    
+      GL.map.addLayer({
+          'id': inf.id+'-line',
+          'type': 'line',
+          'source': settings.id,
+              'paint': color.line,
+              'filter': ['==', '$type', 'LineString']
+      });
+    
+      setTimeout(function(){
+        var features=GL.layerbox.getLayerFeature(inf.id,inf.id+'-point');
+        var features2=GL.layerbox.getLayerFeature(inf.id,inf.id+'-line');
+        var features3=GL.layerbox.getLayerFeature(inf.id,inf.id+'-polygon');
+    
+        var infLayer1={id:inf.id+"-point",source:inf.id,type:inf.type,features:features,color:color.point["circle-color"]};
+        var infLayer2={id:inf.id+"-line",source:inf.id,type:inf.type,features:features2,color:color.line["line-color"]};
+        var infLayer3={id:inf.id+"-polygon",source:inf.id,type:inf.type,features:features3,color:color.polygon["fill-color"]};
+        GL.layerbox.layers.push(infLayer1);
+        GL.layerbox.layers.push(infLayer2);
+        GL.layerbox.layers.push(infLayer3);
+    
+      },100)
+    break
+    case 'vector-url':
+      if(settings.fileType=="geojson"){
+        $.get(settings.url,function(data, status){
+          if(status=="success"){
+            if(typeof data=="string"){
+              data=JSON.parse(data);
+            };
+  
+            var reader = new ol.format.GeoJSON();
+            var features = reader.readFeatures(data,{
+                featureProjection: 'EPSG:4326',
+                dataProjection: settings.epsg
+            });
+              
+            var geojson2 = reader.writeFeatures(features);
+            var r=JSON.parse(geojson2);
+  
+            GL.map.addSource(settings.id, {'type': 'geojson', 'data':r});
+  
+            var inf=settings;
+            inf["layers"]=[settings.id+"-point",settings.id+"-line",settings.id+"-polygon"];
+            inf["geojson"]=data;
+            GL.layerbox.sources.push(inf);
+  
+            var color=GL.style.style(inf.style);
+  
+            console.log(color);
+  
+            GL.map.addLayer({
+              'id': inf.id+'-point',
+              'type': 'circle',
+              'source': settings.id,
+                  'paint': color.point,
+                  'filter': ['==', '$type', 'Point']
+            });
+  
+            GL.map.addLayer({
+              'id': inf.id+'-polygon',
+              'type': 'fill',
+              'source': settings.id,
+                  'paint': color.polygon,
+                  'filter': ['==', '$type', 'Polygon']
+          });
+        
+          GL.map.addLayer({
+              'id': inf.id+'-line',
+              'type': 'line',
+              'source': settings.id,
+                  'paint': color.line,
+                  'filter': ['==', '$type', 'LineString']
+          });
+  
+          setTimeout(function(){
+            var features=GL.layerbox.getLayerFeature(inf.id,inf.id+'-point');
+            var features2=GL.layerbox.getLayerFeature(inf.id,inf.id+'-line');
+            var features3=GL.layerbox.getLayerFeature(inf.id,inf.id+'-polygon');
+        
+            var infLayer1={id:inf.id+"-point",source:inf.id,type:inf.type,features:features,color:color.point["circle-color"]};
+            var infLayer2={id:inf.id+"-line",source:inf.id,type:inf.type,features:features2,color:color.line["line-color"]};
+            var infLayer3={id:inf.id+"-polygon",source:inf.id,type:inf.type,features:features3,color:color.polygon["fill-color"]};
+            GL.layerbox.layers.push(infLayer1);
+            GL.layerbox.layers.push(infLayer2);
+            GL.layerbox.layers.push(infLayer3);
+        
+          },100)
+            
+          }else{
+            GL.bilgi("Hata");
+          }
+          
+        });
+      }else if(settings.fileType=="kml"){
+        $.ajax({
+          url : settings.url,
+          dataType : 'html',
+          success : function(data) {
+            if(typeof data=="string"){
+              parser = new DOMParser();
+              data = parser.parseFromString(data,"text/xml");
+            };
+            
+            var reader = new ol.format.KML({
+              extractStyles: false
+            });
+            var featureArray = reader.readFeatures(data, {
+              "featureProjection": 'EPSG:4326',
+              "dataProjection": settings.epsg
+            });
+            var features= new ol.format.GeoJSON().writeFeatures(featureArray,{
+                    featureProjection: 'EPSG:4326'
+            })
+
+            if (typeof features == 'string') {
+              features = JSON.parse(features);
+            }
+
+            GL.map.addSource(settings.id, {'type': 'geojson', 'data':features});
+  
+            var inf=settings;
+            inf["layers"]=[settings.id+"-point",settings.id+"-line",settings.id+"-polygon"];
+            inf["geojson"]=features;
+            GL.layerbox.sources.push(inf);
+  
+            var color=GL.style.style(inf.style);
+
+            GL.map.addLayer({
+              'id': inf.id+'-point',
+              'type': 'circle',
+              'source': settings.id,
+                  'paint': color.point,
+                  'filter': ['==', '$type', 'Point']
+            });
+  
+            GL.map.addLayer({
+              'id': inf.id+'-polygon',
+              'type': 'fill',
+              'source': settings.id,
+                  'paint': color.polygon,
+                  'filter': ['==', '$type', 'Polygon']
+            });
+          
+            GL.map.addLayer({
+                'id': inf.id+'-line',
+                'type': 'line',
+                'source': settings.id,
+                    'paint': color.line,
+                    'filter': ['==', '$type', 'LineString']
+            });
+    
+            setTimeout(function(){
+              var features=GL.layerbox.getLayerFeature(inf.id,inf.id+'-point');
+              var features2=GL.layerbox.getLayerFeature(inf.id,inf.id+'-line');
+              var features3=GL.layerbox.getLayerFeature(inf.id,inf.id+'-polygon');
+          
+              var infLayer1={id:inf.id+"-point",source:inf.id,type:inf.type,features:features,color:color.point["circle-color"]};
+              var infLayer2={id:inf.id+"-line",source:inf.id,type:inf.type,features:features2,color:color.line["line-color"]};
+              var infLayer3={id:inf.id+"-polygon",source:inf.id,type:inf.type,features:features3,color:color.polygon["fill-color"]};
+              GL.layerbox.layers.push(infLayer1);
+              GL.layerbox.layers.push(infLayer2);
+              GL.layerbox.layers.push(infLayer3);
+          
+            },100)
+
+          }
+         });  
+      }else if(settings.fileType=="gpx"){
+        $.ajax({
+          url : settings.url,
+          dataType : 'html',
+          success : function(data) {
+            if(typeof data=="string"){
+              parser = new DOMParser();
+              data = parser.parseFromString(data,"text/xml");
+            };
+            console.log(data);
+            var reader = new ol.format.GPX();
+            var featureArray = reader.readFeatures(data, {
+              "featureProjection": 'EPSG:4326',
+              "dataProjection": settings.epsg
+            });
+            var features= new ol.format.GeoJSON().writeFeatures(featureArray,{
+                    featureProjection: 'EPSG:4326'
+            })
+
+            if (typeof features == 'string') {
+              features = JSON.parse(features);
+            }
+
+            GL.map.addSource(settings.id, {'type': 'geojson', 'data':features});
+  
+            var inf=settings;
+            inf["layers"]=[settings.id+"-point",settings.id+"-line",settings.id+"-polygon"];
+            inf["geojson"]=features;
+            GL.layerbox.sources.push(inf);
+
+            var color=GL.style.style(inf.style);
+            GL.map.addLayer({
+              'id': inf.id+'-point',
+              'type': 'circle',
+              'source': settings.id,
+                  'paint': color.point,
+                  'filter': ['==', '$type', 'Point']
+            });
+  
+            GL.map.addLayer({
+              'id': inf.id+'-polygon',
+              'type': 'fill',
+              'source': settings.id,
+                  'paint': color.polygon,
+                  'filter': ['==', '$type', 'Polygon']
+            });
+          
+            GL.map.addLayer({
+                'id': inf.id+'-line',
+                'type': 'line',
+                'source': settings.id,
+                    'paint': color.line,
+                    'filter': ['==', '$type', 'LineString']
+            });
+    
+            setTimeout(function(){
+              var features=GL.layerbox.getLayerFeature(inf.id,inf.id+'-point');
+              var features2=GL.layerbox.getLayerFeature(inf.id,inf.id+'-line');
+              var features3=GL.layerbox.getLayerFeature(inf.id,inf.id+'-polygon');
+          
+              var infLayer1={id:inf.id+"-point",source:inf.id,type:inf.type,features:features,color:color.point["circle-color"]};
+              var infLayer2={id:inf.id+"-line",source:inf.id,type:inf.type,features:features2,color:color.line["line-color"]};
+              var infLayer3={id:inf.id+"-polygon",source:inf.id,type:inf.type,features:features3,color:color.polygon["fill-color"]};
+              GL.layerbox.layers.push(infLayer1);
+              GL.layerbox.layers.push(infLayer2);
+              GL.layerbox.layers.push(infLayer3);
+          
+            },100)
+
+          },
+          error: function (ex) {
+              GL.uyari("Hata");
+          }
+        });
+
+      }else if(settings.fileType=="shp"){
+        var xhr = new XMLHttpRequest();
+        $.ajax({
+          xhrFields: {
+            responseType: 'blob' 
+          },
+          type: 'GET',
+          url: settings.url,
+          success : function(data) {
+            var fileReader = new FileReader();
+            fileReader.readAsArrayBuffer(data);
+
+            fileReader.addEventListener("load", function (e) {
+              var d=fileReader.result;
+              shp(d).then(function (geojson) {
+                 console.log(geojson);
+                 if(typeof geojson=="string"){
+                  geojson=JSON.parse(geojson);
+                  };
+      
+                var reader = new ol.format.GeoJSON();
+                var features = reader.readFeatures(geojson,{
+                    featureProjection: 'EPSG:4326',
+                    dataProjection: settings.epsg
+                });
+                  
+                var geojson2 = reader.writeFeatures(features);
+                var r=JSON.parse(geojson2);
+      
+                GL.map.addSource(settings.id, {'type': 'geojson', 'data':r});
+      
+                var inf=settings;
+                inf["layers"]=[settings.id+"-point",settings.id+"-line",settings.id+"-polygon"];
+                inf["geojson"]=r;
+                GL.layerbox.sources.push(inf);
+      
+                var color=GL.style.style(inf.style);
+      
+                console.log(color);
+
+                GL.map.addLayer({
+                  'id': inf.id+'-point',
+                  'type': 'circle',
+                  'source': settings.id,
+                      'paint': color.point,
+                      'filter': ['==', '$type', 'Point']
+                });
+      
+                GL.map.addLayer({
+                  'id': inf.id+'-polygon',
+                  'type': 'fill',
+                  'source': settings.id,
+                      'paint': color.polygon,
+                      'filter': ['==', '$type', 'Polygon']
+              });
+            
+              GL.map.addLayer({
+                  'id': inf.id+'-line',
+                  'type': 'line',
+                  'source': settings.id,
+                      'paint': color.line,
+                      'filter': ['==', '$type', 'LineString']
+              });
+      
+              setTimeout(function(){
+                var features=GL.layerbox.getLayerFeature(inf.id,inf.id+'-point');
+                var features2=GL.layerbox.getLayerFeature(inf.id,inf.id+'-line');
+                var features3=GL.layerbox.getLayerFeature(inf.id,inf.id+'-polygon');
+            
+                var infLayer1={id:inf.id+"-point",source:inf.id,type:inf.type,features:features,color:color.point["circle-color"]};
+                var infLayer2={id:inf.id+"-line",source:inf.id,type:inf.type,features:features2,color:color.line["line-color"]};
+                var infLayer3={id:inf.id+"-polygon",source:inf.id,type:inf.type,features:features3,color:color.polygon["fill-color"]};
+                GL.layerbox.layers.push(infLayer1);
+                GL.layerbox.layers.push(infLayer2);
+                GL.layerbox.layers.push(infLayer3);
+            
+              },100)
+
+
+              });
+            })
+          }
+        })
+      }else if(settings.fileType=="excel"){
+        var xhr = new XMLHttpRequest();
+        $.ajax({
+          xhrFields: {
+            responseType: 'blob' 
+          },
+          type: 'GET',
+          url: settings.url,
+          success : function(data) {
+            var fileReader = new FileReader();
+            fileReader.readAsBinaryString(data);
+
+            fileReader.addEventListener("load", function (e) {
+              excel = {
+                fileName: "",
+                file: {},
+                sheets: []
+              };
+
+              excel.file = XLSX.read(fileReader.result, {
+                type: 'binary'
+              });
+
+              excel.file.SheetNames.forEach(function (sheetName) {
+                var excelResult = XLSX.utils.sheet_to_row_object_array(excel.file.Sheets[sheetName]);
+                var obj = {
+                  sheetName: sheetName,
+                  fields: [],
+                  row: 0
+                };
+                obj.row = excelResult.length;
+
+                for (i in excelResult[0]) {
+                  obj.fields.push(i);
+                }
+
+                excel.sheets.push(obj);
+              }); 
+
+              var sheet=settings.pageinfo;
+              var geoColumn=settings.wktcolumn;
+
+              var excelResult =XLSX.utils.sheet_to_row_object_array(excel.file.Sheets[sheet]);
+              var epsg = settings.epsg;
+              var fcollect = { type: "FeatureCollection", features: []};
+
+              excelResult.map(function(item){
+                var properties = item;
+                var reader = new ol.format.WKT();
+                var readergeo = new ol.format.GeoJSON();
+                var feature = reader.readFeature(item[geoColumn]);
+                var gjn = readergeo.writeFeature(feature);
+                gjn=JSON.parse(gjn)
+                gjn.properties = properties;
+                fcollect.features.push(gjn);
+              });
+
+              var readergeo = new ol.format.GeoJSON();
+              var features = readergeo.readFeatures(fcollect,{featureProjection: "EPSG:4326",dataProjection: epsg});
+
+              var features2= new ol.format.GeoJSON().writeFeatures(features,{})
+              if (typeof features2 == 'string') {
+                      features2 = JSON.parse(features2);
+              }
+
+              excel={
+                fileName: "",
+                file: {},
+                sheets: []
+              };
+
+              GL.map.addSource(settings.id, {'type': 'geojson', 'data':features2});
+  
+              var inf=settings;
+              inf["layers"]=[settings.id+"-point",settings.id+"-line",settings.id+"-polygon"];
+              inf["geojson"]=features2;
+              GL.layerbox.sources.push(inf);
+    
+              var color=GL.style.style(inf.style);
+    
+              GL.map.addLayer({
+                'id': inf.id+'-point',
+                'type': 'circle',
+                'source': settings.id,
+                    'paint': color.point,
+                    'filter': ['==', '$type', 'Point']
+              });
+    
+              GL.map.addLayer({
+                'id': inf.id+'-polygon',
+                'type': 'fill',
+                'source': settings.id,
+                    'paint': color.polygon,
+                    'filter': ['==', '$type', 'Polygon']
+              });
+            
+              GL.map.addLayer({
+                  'id': inf.id+'-line',
+                  'type': 'line',
+                  'source': settings.id,
+                      'paint': color.line,
+                      'filter': ['==', '$type', 'LineString']
+              });
+      
+              setTimeout(function(){
+                var features=GL.layerbox.getLayerFeature(inf.id,inf.id+'-point');
+                var features2=GL.layerbox.getLayerFeature(inf.id,inf.id+'-line');
+                var features3=GL.layerbox.getLayerFeature(inf.id,inf.id+'-polygon');
+            
+                var infLayer1={id:inf.id+"-point",source:inf.id,type:inf.type,features:features,color:color.point["circle-color"]};
+                var infLayer2={id:inf.id+"-line",source:inf.id,type:inf.type,features:features2,color:color.line["line-color"]};
+                var infLayer3={id:inf.id+"-polygon",source:inf.id,type:inf.type,features:features3,color:color.polygon["fill-color"]};
+                GL.layerbox.layers.push(infLayer1);
+                GL.layerbox.layers.push(infLayer2);
+                GL.layerbox.layers.push(infLayer3);
+              },100)
+            })
+          }
+        })
+      }if(settings.fileType=="ncn"){
+        $.get(settings.url,function(data, status){
+          if(status=="success"){
+            var geojson = {
+              type: "FeatureCollection",
+              features: []
+            };
+
+            var satirlar = data.split('\n');
+            satirlar.map(function (item) {
+              var coords = item.split(' ');
+              var y = parseFloat(coords[1]);
+              var x = parseFloat(coords[2]);
+              var z = parseFloat(coords[3]) || 0;
+              var namex = coords[0];
+
+              if (namex !== "") {
+                var part = {
+                  type: "Feature",
+                  properties: {
+                  name: namex,
+                  elevation: z
+                  },
+                geometry: {
+                  type: "Point",
+                  coordinates: [y, x]
+                }
+              };
+                geojson.features.push(part);
+              }
+            });
+  
+            var reader = new ol.format.GeoJSON();
+            var features = reader.readFeatures(geojson,{
+                featureProjection: 'EPSG:4326',
+                dataProjection: settings.epsg
+            });
+              
+            var geojson2 = reader.writeFeatures(features);
+            var r=JSON.parse(geojson2);
+  
+            GL.map.addSource(settings.id, {'type': 'geojson', 'data':r});
+  
+            var inf=settings;
+            inf["layers"]=[settings.id+"-point",settings.id+"-line",settings.id+"-polygon"];
+            inf["geojson"]=r;
+            GL.layerbox.sources.push(inf);
+  
+            var color=GL.style.style(inf.style);
+  
+            GL.map.addLayer({
+              'id': inf.id+'-point',
+              'type': 'circle',
+              'source': settings.id,
+                  'paint': color.point,
+                  'filter': ['==', '$type', 'Point']
+            });
+  
+            GL.map.addLayer({
+              'id': inf.id+'-polygon',
+              'type': 'fill',
+              'source': settings.id,
+                  'paint': color.polygon,
+                  'filter': ['==', '$type', 'Polygon']
+          });
+        
+          GL.map.addLayer({
+              'id': inf.id+'-line',
+              'type': 'line',
+              'source': settings.id,
+                  'paint': color.line,
+                  'filter': ['==', '$type', 'LineString']
+          });
+  
+          setTimeout(function(){
+            var features=GL.layerbox.getLayerFeature(inf.id,inf.id+'-point');
+            var features2=GL.layerbox.getLayerFeature(inf.id,inf.id+'-line');
+            var features3=GL.layerbox.getLayerFeature(inf.id,inf.id+'-polygon');
+        
+            var infLayer1={id:inf.id+"-point",source:inf.id,type:inf.type,features:features,color:color.point["circle-color"]};
+            var infLayer2={id:inf.id+"-line",source:inf.id,type:inf.type,features:features2,color:color.line["line-color"]};
+            var infLayer3={id:inf.id+"-polygon",source:inf.id,type:inf.type,features:features3,color:color.polygon["fill-color"]};
+            GL.layerbox.layers.push(infLayer1);
+            GL.layerbox.layers.push(infLayer2);
+            GL.layerbox.layers.push(infLayer3);
+        
+          },100)
+            
+          }else{
+            GL.bilgi("Hata");
+          }
+          
+        });
+      }
+      
+    break
+    case 'createWFS':
+      var url2=settings.url+"?service=WFS&version="+settings.version+"&srsname=EPSG:4326&request=GetFeature&typeName="+settings.typename+"&outputFormat=application%2Fjson";
+      GL.loading("WFS Yükleniyor");
+      $.get(url2,function(data, status){
+          GL.loading(false);
+          if(status=="success"){
+            if(typeof data=="string"){
+              data=JSON.parse(data);
+            };
+
+            var reader = new ol.format.GeoJSON();
+            var features = reader.readFeatures(data,{
+                featureProjection: 'EPSG:4326',
+                dataProjection: settings.epsg
+            });
+              
+            var geojson2 = reader.writeFeatures(features);
+            var r=JSON.parse(geojson2);
+            console.log(r);
+            GL.map.addSource(settings.id, {'type': 'geojson', 'data':r});
+  
+            var inf=settings;
+            inf["layers"]=[settings.id+"-point",settings.id+"-line",settings.id+"-polygon"];
+            inf["geojson"]=r;
+            GL.layerbox.sources.push(inf);
+  
+            var color=GL.style.style(inf.style);
+  
+            GL.map.addLayer({
+              'id': inf.id+'-point',
+              'type': 'circle',
+              'source': settings.id,
+                  'paint': color.point,
+                  'filter': ['==', '$type', 'Point']
+            });
+  
+            GL.map.addLayer({
+              'id': inf.id+'-polygon',
+              'type': 'fill',
+              'source': settings.id,
+                  'paint': color.polygon,
+                  'filter': ['==', '$type', 'Polygon']
+          });
+        
+          GL.map.addLayer({
+              'id': inf.id+'-line',
+              'type': 'line',
+              'source': settings.id,
+                  'paint': color.line,
+                  'filter': ['==', '$type', 'LineString']
+          });
+  
+          setTimeout(function(){
+            var features=GL.layerbox.getLayerFeature(inf.id,inf.id+'-point');
+            var features2=GL.layerbox.getLayerFeature(inf.id,inf.id+'-line');
+            var features3=GL.layerbox.getLayerFeature(inf.id,inf.id+'-polygon');
+        
+            var infLayer1={id:inf.id+"-point",source:inf.id,type:inf.type,features:features,color:color.point["circle-color"]};
+            var infLayer2={id:inf.id+"-line",source:inf.id,type:inf.type,features:features2,color:color.line["line-color"]};
+            var infLayer3={id:inf.id+"-polygon",source:inf.id,type:inf.type,features:features3,color:color.polygon["fill-color"]};
+            GL.layerbox.layers.push(infLayer1);
+            GL.layerbox.layers.push(infLayer2);
+            GL.layerbox.layers.push(infLayer3);
+        
+          },100)
+            
+          }else{
+            GL.bilgi("Hata");
+          }
+          
+        });
+
+    break
+    case 'createWMS':
+      var url= settings.url+'?service=WMS&version='+settings.version+'&request=GetMap&layers='+settings.typename+'&styles=&bbox={bbox-epsg-3857}&transparent=true&width=256&height=256&srs=EPSG:3857&format='+settings.selectedType;
+      console.log(url);
+      GL.map.addSource(settings.id, {
+        'type': 'raster',
+        'tiles': [url],
+        'tileSize': 256
+      });
+
+      var inf=settings;
+      inf["layers"]=[settings.id+"-raster"];
+      inf["geojson"]="";
+      GL.layerbox.sources.push(inf);
+    
+      GL.map.addLayer(
+          {
+          'id': settings.id+"-raster",
+          'type': 'raster',
+          'source': settings.id,
+          'paint': {
+            'raster-opacity':settings.opacity
+          },
+          'minzoom': Number(settings.minzoom),
+          'maxzoom': Number(settings.maxzoom)
+          }
+      );
+    
+      var infLayer1={id:settings.id+"-raster",source:settings.id,type:settings.type,features:"",color:""};
+      GL.layerbox.layers.push(infLayer1);
+    break
+    case 'createWMTS':
+      var url=settings.url+"."+settings.selectedType;
+      GL.map.addSource(settings.id, {
+        'type': 'raster',
+        'tiles': [url],
+        'tileSize': 256
+      });
+    
+      var inf=settings;
+      inf["layers"]=[settings.id+"-raster"];
+      inf["geojson"]="";
+      GL.layerbox.sources.push(inf);
+    
+      GL.map.addLayer(
+          {
+          'id': settings.id+"-raster",
+          'type': 'raster',
+          'source': settings.id,
+          'paint': {
+            'raster-opacity':settings.opacity
+          },
+          'minzoom': Number(settings.minzoom),
+          'maxzoom': Number(settings.maxzoom)
+          }
+      );
+    
+      var infLayer1={id:settings.id+"-raster",source:settings.id,type:settings.type,features:"",color:""};
+      GL.layerbox.layers.push(infLayer1);
+    break
+    case 'createXYZ':
+      GL.map.addSource(settings.id, {
+        'type': 'raster',
+        'tiles': [settings.url],
+        'tileSize': 256
+      });
+    
+      var inf=settings;
+      inf["layers"]=[settings.id+"-raster"];
+      inf["geojson"]="";
+      GL.layerbox.sources.push(inf);
+    
+      GL.map.addLayer(
+          {
+          'id': settings.id+"-raster",
+          'type': 'raster',
+          'source': settings.id,
+          'paint': {
+            'raster-opacity':settings.opacity
+          },
+          'minzoom': Number(settings.minzoom),
+          'maxzoom': Number(settings.maxzoom)
+          }
+      );
+    
+      var infLayer1={id:settings.id+"-raster",source:settings.id,type:settings.type,features:"",color:""};
+      GL.layerbox.layers.push(infLayer1);
+    break
+    case 'createMVT':
+      GL.map.addSource(settings.id, {
+        'type': 'vector',
+        'tiles': [settings.url]
+    });
+
+    var inf=settings;
+    inf["layers"]=[settings.id+"-point",settings.id+"-line",settings.id+"-polygon"];
+    GL.layerbox.sources.push(inf);
+
+    var color=GL.style.style(inf.style);
+
+    GL.map.addLayer(
+        {
+        'id': settings.id+"-line",
+        'type': 'line',
+        'source': settings.id,
+        'source-layer': settings.typename,
+        'paint': color.line,
+        'minzoom': Number(settings.minzoom),
+        'maxzoom': Number(settings.maxzoom),
+        'filter': ['==', '$type', 'LineString']
+        }
+    );
+
+    GL.map.addLayer(
+        {
+        'id': settings.id+"-point",
+        'type': 'circle',
+        'source': settings.id,
+        'source-layer': settings.typename,
+        'paint': color.point,
+        'minzoom': Number(settings.minzoom),
+        'maxzoom': Number(settings.maxzoom),
+        'filter': ['==', '$type', 'Point']
+        }
+    );
+
+    GL.map.addLayer(
+        {
+        'id': settings.id+"-polygon",
+        'type': 'fill',
+        'source': settings.id,
+        'source-layer': settings.typename,
+        'paint': color.polygon,
+        'minzoom': Number(settings.minzoom),
+        'maxzoom': Number(settings.maxzoom),
+        'filter': ['==', '$type', 'Polygon']
+        }
+    );
+
+    setTimeout(function(){
+      var features=GL.layerbox.getLayerFeature(settings.id,settings.id+'-point');
+      var features2=GL.layerbox.getLayerFeature(settings.id,settings.id+'-line');
+      var features3=GL.layerbox.getLayerFeature(settings.id,settings.id+'-polygon');
+  
+      var infLayer1={id:settings.id+"-point",source:settings.id,type:inf.type,features:features,color:color.point["circle-color"]};
+      var infLayer2={id:settings.id+"-line",source:settings.id,type:inf.type,features:features2,color:color.line["line-color"]};
+      var infLayer3={id:settings.id+"-polygon",source:settings.id,type:inf.type,features:features3,color:color.polygon["fill-color"]};
+      GL.layerbox.layers.push(infLayer1);
+      GL.layerbox.layers.push(infLayer2);
+      GL.layerbox.layers.push(infLayer3);
+  
+    },100)
+
+    break
+    case 'createPBF':
+      GL.map.addSource(settings.id, {
+        'type': 'vector',
+        'tiles': [settings.url]
+      });
+
+      var inf=settings;
+      inf["layers"]=[settings.id+"-point",settings.id+"-line",settings.id+"-polygon"];
+      GL.layerbox.sources.push(inf);
+
+      var color=GL.style.style(inf.style);
+
+      GL.map.addLayer(
+          {
+          'id': settings.id+"-line",
+          'type': 'line',
+          'source': settings.id,
+          'source-layer': settings.typename,
+          'paint': color.line,
+          'minzoom': Number(settings.minzoom),
+          'maxzoom': Number(settings.maxzoom),
+          'filter': ['==', '$type', 'LineString']
+          }
+      );
+
+      GL.map.addLayer(
+          {
+          'id': settings.id+"-point",
+          'type': 'circle',
+          'source': settings.id,
+          'source-layer': settings.typename,
+          'paint': color.point,
+          'minzoom': Number(settings.minzoom),
+          'maxzoom': Number(settings.maxzoom),
+          'filter': ['==', '$type', 'Point']
+          }
+      );
+
+      GL.map.addLayer(
+          {
+          'id': settings.id+"-polygon",
+          'type': 'fill',
+          'source': settings.id,
+          'source-layer': settings.typename,
+          'paint': color.polygon,
+          'minzoom': Number(settings.minzoom),
+          'maxzoom': Number(settings.maxzoom),
+          'filter': ['==', '$type', 'Polygon']
+          }
+      );
+
+      setTimeout(function(){
+        var features=GL.layerbox.getLayerFeature(settings.id,settings.id+'-point');
+        var features2=GL.layerbox.getLayerFeature(settings.id,settings.id+'-line');
+        var features3=GL.layerbox.getLayerFeature(settings.id,settings.id+'-polygon');
+    
+        var infLayer1={id:settings.id+"-point",source:settings.id,type:inf.type,features:features,color:color.point["circle-color"]};
+        var infLayer2={id:settings.id+"-line",source:settings.id,type:inf.type,features:features2,color:color.line["line-color"]};
+        var infLayer3={id:settings.id+"-polygon",source:settings.id,type:inf.type,features:features3,color:color.polygon["fill-color"]};
+        GL.layerbox.layers.push(infLayer1);
+        GL.layerbox.layers.push(infLayer2);
+        GL.layerbox.layers.push(infLayer3);
+    
+      },100)
+
+    break
+  }
+  
+}

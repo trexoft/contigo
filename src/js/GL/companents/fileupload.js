@@ -19,42 +19,42 @@ Vue.component('fileupload', {
                 {
                   id:'geojson',
                   tite:'GeoJSON',
-                  img:'./src/img/maps/street.png'
+                  img:'./src/img/graphics/geojsonBig.png'
                 },
                 {
                   id:'kml',
                   tite:'KML',
-                  img:'./src/img/maps/light.png'
+                  img:'./src/img/graphics/kmlkmzBig.png'
                 },
                 {
                   id:'mbtiles',
                   tite:'MBTiles',
-                  img:'./src/img/maps/dark.png'
+                  img:'./src/img/graphics/mbtileBig.png'
                 },
                 {
                   id:'gpx',
                   tite:'GPX',
-                  img:'./src/img/maps/outdoor.png'
+                  img:'./src/img/graphics/gpxBig.png'
                 },
                 {
                   id:'shp',
                   tite:'Shapefile',
-                  img:'./src/img/maps/satellite.png'
+                  img:'./src/img/graphics/shpBig.png'
                 },
                 {
                   id:'geotiff',
                   tite:'GeoTIFF',
-                  img:'./src/img/maps/satellite.png'
-                },
-                {
-                  id:'csv',
-                  tite:'CSV',
-                  img:'./src/img/maps/satellite.png'
+                  img:'./src/img/graphics/geotiffBig.png'
                 },
                 {
                   id:'excel',
                   tite:'Excel',
-                  img:'./src/img/maps/satellite.png'
+                  img:'./src/img/graphics/xlsBig.png'
+                },
+                {
+                  id:'ncn',
+                  tite:'NCN',
+                  img:'./src/img/graphics/ncnBig.png'
                 }
               ]
           }
@@ -247,6 +247,8 @@ Vue.component('fileupload', {
                     case "shp":
                       var id = "shp" + Date.now();
                       var data=reader.result;
+                      console.log(data);
+                      console.log(typeof data);
                       var layerCount=GL.map.getStyle().layers.length;
                       var color=GL.config.colors[layerCount%19];
                       var reader2 = new ol.format.GeoJSON();
@@ -308,11 +310,64 @@ Vue.component('fileupload', {
                       excelpanel.$children[0].open(epsgCode,fileName);
                       
                     break
+                    case "ncn":
+                      var data=reader.result;
+
+                      var geojson = {
+                        type: "FeatureCollection",
+                        features: []
+                      };
+
+                      var satirlar = data.split('\n');
+                      satirlar.map(function (item) {
+                        var coords = item.split(' ');
+                        var y = parseFloat(coords[1]);
+                        var x = parseFloat(coords[2]);
+                        var z = parseFloat(coords[3]) || 0;
+                        var namex = coords[0];
+
+                        if (namex !== "") {
+                          var part = {
+                            type: "Feature",
+                            properties: {
+                              name: namex,
+                              elevation: z
+                            },
+                            geometry: {
+                              type: "Point",
+                              coordinates: [y, x]
+                            }
+                          };
+                          geojson.features.push(part);
+                        }
+                      });
+
+                      var reader2 = new ol.format.GeoJSON();
+                      var featureArray = reader2.readFeatures(geojson, {
+                        featureProjection: "EPSG:4326",
+                        dataProjection: 'EPSG:'+epsgCode
+                      });
+
+                      var geojson2=reader2.writeFeatures(featureArray);
+                      if (typeof geojson2=="string"){
+                        geojson2=JSON.parse(geojson2);
+                      }
+
+                      var id = "ncn" + Date.now();
+                      var layerCount=GL.map.getStyle().layers.length;
+                      var color=GL.config.colors[layerCount%19];
+
+                      var information={id:id,name:fileName,type:'ncn',layers:[id+"-point",id+"-line",id+"-polygon"]};
+                      GL.addGeojsonToLayer(geojson2,id,color,information);
+                      GL.loading(false);
+                      
+                    break
                 }
             }, false);
 
             if (file) {
               if (type == "shp" || type=="geotiff") {
+                console.log(file);
                 reader.readAsArrayBuffer(file);
               }else if(type=="excel"){
                 reader.readAsBinaryString(file);

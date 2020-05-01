@@ -462,7 +462,7 @@ Vue.component('drawvector', {
 
                     '<div  class="input-wrapper">'+
                         '<label v-if="item.type==\'integer\' && item.name!=\'index\'" class="label"  for="layerfield">{{item.name}}</label>'+
-                            '<input v-if="item.type==\'integer\' && item.name!=\'index\'" v-model="item.value" type="number" class="form-control" id="layerfield" placeholder="Değer Giriniz" :disabled="item.protecth == false">'+
+                            '<input v-if="item.type==\'integer\' && item.name!=\'index\'" v-model="item.value" type="number" class="form-control" id="layerfield" placeholder="Değer Giriniz" :disabled="item.protecth == true">'+
                                 '<i class="clear-input">'+
                                     '<ion-icon name="close-circle"></ion-icon>'+
                                 '</i>'+
@@ -470,7 +470,7 @@ Vue.component('drawvector', {
 
                     '<div  class="input-wrapper">'+
                         '<label v-if="item.type==\'double\' && item.name!=\'index\'" class="label"  for="layerfield">{{item.name}}</label>'+
-                            '<input v-if="item.type==\'double\' && item.name!=\'index\'" v-model="item.value" type="number" class="form-control" id="layerfield" placeholder="Değer Giriniz" :disabled="item.protecth == false">'+
+                            '<input v-if="item.type==\'double\' && item.name!=\'index\'" v-model="item.value" type="number" class="form-control" id="layerfield" placeholder="Değer Giriniz" :disabled="item.protecth == true">'+
                                 '<i class="clear-input">'+
                                     '<ion-icon name="close-circle"></ion-icon>'+
                                 '</i>'+
@@ -478,14 +478,14 @@ Vue.component('drawvector', {
                     
                     '<div  class="input-wrapper">'+
                         '<label v-if="item.type==\'date\'" class="label" for="layerfield">{{item.name}}</label>'+
-                            '<input v-if="item.type==\'date\'" v-model="item.value" type="date" class="form-control" id="layerfield" placeholder="Değer Giriniz" :disabled="item.protecth == false">'+
+                            '<input v-if="item.type==\'date\'" v-model="item.value" type="date" class="form-control" id="layerfield" placeholder="Değer Giriniz" :disabled="item.protecth == true">'+
                                 '<i class="clear-input">'+
                                     '<ion-icon name="close-circle"></ion-icon>'+
                                 '</i>'+
                     '</div>'+
 
                     '<div v-if="item.type==\'boolean\'" class="custom-control custom-checkbox">'+
-                        '<input v-if="item.type==\'boolean\'" v-model="item.value" type="checkbox" class="custom-control-input" id="customCheck4" :disabled="item.protecth == false">'+
+                        '<input v-if="item.type==\'boolean\'" v-model="item.value" type="checkbox" class="custom-control-input" id="customCheck4" :disabled="item.protecth == true">'+
                         '<label v-if="item.type==\'boolean\'" class="custom-control-label" for="customCheck4">{{item.name}}</label>'+
                     '</div>'+
 

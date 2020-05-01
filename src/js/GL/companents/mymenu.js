@@ -300,6 +300,10 @@ Vue.component('mymenu', {
       e.preventDefault();
       GL.titresim();
       switch (menuid) {
+        case 'catalogUpload':{
+          GL.uploadCatalog();
+          break;
+        }
         case 'pbf': {
           addpbf.$children[0].open();
           break;
