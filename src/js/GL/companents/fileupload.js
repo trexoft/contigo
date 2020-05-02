@@ -42,11 +42,6 @@ Vue.component('fileupload', {
                   img:'./src/img/graphics/shpBig.png'
                 },
                 {
-                  id:'geotiff',
-                  tite:'GeoTIFF',
-                  img:'./src/img/graphics/geotiffBig.png'
-                },
-                {
                   id:'excel',
                   tite:'Excel',
                   img:'./src/img/graphics/xlsBig.png'
@@ -55,6 +50,11 @@ Vue.component('fileupload', {
                   id:'ncn',
                   tite:'NCN',
                   img:'./src/img/graphics/ncnBig.png'
+                },
+                {
+                  id:'geotiff',
+                  tite:'GeoTIFF',
+                  img:'./src/img/graphics/geotiffBig.png'
                 }
               ]
           }

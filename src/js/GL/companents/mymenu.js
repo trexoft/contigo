@@ -300,6 +300,18 @@ Vue.component('mymenu', {
       e.preventDefault();
       GL.titresim();
       switch (menuid) {
+        case 'specialmaps':{
+          xyzBasemaps.$children[0].open('special');
+          break;
+        }
+        case 'satellitemaps':{
+          xyzBasemaps.$children[0].open('satellite');
+          break;
+        }
+        case 'streetmaps':{
+          xyzBasemaps.$children[0].open('street');
+          break;
+        }
         case 'catalogUpload':{
           GL.uploadCatalog();
           break;
