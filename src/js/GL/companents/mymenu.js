@@ -300,6 +300,18 @@ Vue.component('mymenu', {
       e.preventDefault();
       GL.titresim();
       switch (menuid) {
+        case 'catalogCreate':{
+          layerhistory.$children[0].openCatalogCreation();
+          break
+        }
+        case 'catalogHistory':{
+          layerhistory.$children[0].open();
+          break
+        }
+        case 'catalogList':{
+          catalogload.$children[0].openList();
+          break
+        }
         case 'specialmaps':{
           xyzBasemaps.$children[0].open('special');
           break;

@@ -37,7 +37,8 @@ Vue.component('addxyz', {
                 this.minzoom=0;
             }
             var id=Date.now().toString();
-            GL.addXYZLayer(id,this.url,this.layerName,this.minzoom,this.maxzoom);
+            var url=[this.url];
+            GL.addXYZLayer(id,url,this.layerName,this.minzoom,this.maxzoom);
             $("#addxyzserver").modal('hide');
             GL.bilgi("Başarıyla Eklendi");
         }

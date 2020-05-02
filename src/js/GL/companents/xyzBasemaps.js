@@ -248,6 +248,12 @@ Vue.component('xyzbasemaps', {
       },
       close:function(e){
         $("#xyzBasemapsModal").modal('hide');
+      },
+      changeBasemap:function(item){
+        console.log(item);
+        GL.addXYZLayer(item.id,item.url,item.name,0,22);
+        $("#xyzBasemapsModal").modal('hide');
+        GL.bilgi("Altlık harita değiştirildi");
       }
   },
   template:
@@ -269,7 +275,7 @@ Vue.component('xyzbasemaps', {
                                   '<img style="border-radius: 0px !important; width: 100%;" :src="item.img" class="card-img-top" alt="image">'+
                                 '</div>'+
                                 '<div class="card-footer" style="padding: 0 !important; border: none;">'+
-                                  '<button type="button" :class="item.status!==true?style.classActive:style.classPassive">{{item.status!==true?GL.lang.general.use:GL.lang.general.active}}</button>'+
+                                  '<button type="button" @click="changeBasemap(item)" :class="item.status!==true?style.classActive:style.classPassive">{{item.status!==true?GL.lang.general.use:GL.lang.general.active}}</button>'+
                                 '</div>'+
                                 '</div>'+
                               '</div>'+

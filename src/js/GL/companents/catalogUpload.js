@@ -12,11 +12,13 @@ Vue.component('catalogload', {
               header:"Katalog",
               pages:[{i:0,id:'tab1',title:'Harita',active:false,class:"tab-pane"},
                      {i:1,id:'tab2',title:'Katmanlar',active:false,class:"tab-pane"},
-                     {i:2,id:'tab3',title:'Tab - 3',active:false,class:"tab-pane"}],
+                     {i:2,id:'tab3',title:'Kataloglar',active:false,class:"tab-pane"}],
               data:null,
               layers:[],
               catalogName:"",
-              activeLayers:[]
+              activeLayers:[],
+              catalogs:[],
+              //{name:"catalog1",id:"catalog-1"},{name:"catalog2",id:"catalog-2"}
           }
       },
       open:function(data){
@@ -26,9 +28,51 @@ Vue.component('catalogload', {
           debugger;
           that.setPageDirection(direction);
         });
+        if(localStorage.getItem('GL-Catalog')!=null){
+          var dataa=localStorage.getItem('GL-Catalog');
+          if(dataa.length>1){
+              this.catalogs=JSON.parse(dataa);
+          }else{
+              this.catalogs.push(JSON.parse(dataa));
+          }
+        }
+
         this.data=data;
         this.catalogName=this.data.name;
+
+        if(this.data!=null){
+          var currentid=this.data.id;
+          var control=false;
+          for(var l=0;l<this.catalogs.length;l++){
+            if(currentid==this.catalogs[l].id){
+              control=true;
+            }
+          }
+
+          if(control==false){
+            this.catalogs.push(this.data);
+            GL.savelocalstorage("GL-Catalog",this.catalogs);
+          }
+        }
+
         this.listLayer(data);
+      },
+      openList:function(){
+        this.onoff = true;
+        this.setPage('tab3');
+        GL.touch.on('#catalogload',function(event,direction){
+          debugger;
+          that.setPageDirection(direction);
+        });
+
+        if(localStorage.getItem('GL-Catalog')!=null){
+          var dataa=localStorage.getItem('GL-Catalog');
+          if(dataa.length>1){
+              this.catalogs=JSON.parse(dataa);
+          }else{
+              this.catalogs.push(JSON.parse(dataa));
+          }
+        }
       },
       close:function(e){
         this.onoff = false;
@@ -133,11 +177,19 @@ Vue.component('catalogload', {
         for(var i=0;i<data.layers.length;i++){
             var layername=data.layers[i].name;
             var layerid=data.layers[i].id;
-            this.layers.push({name:layername,id:layerid,active:false})
+
+            var found = GL.layerbox.getSource(layerid);
+            if(found!=undefined){
+              this.layers.push({name:layername,id:layerid,active:true})
+            }else{
+              this.layers.push({name:layername,id:layerid,active:false})
+            }
+
+            
         }
       },
       getCatalogSettings:function(id){
-
+        debugger;
             var catalogname=this.data.name;
             var catalogid=this.data.id;
 
@@ -146,6 +198,8 @@ Vue.component('catalogload', {
             var pitch=this.data.pitch;
             var rotate=this.data.rotate;
             var darkmode=this.data.darkMode;
+
+            var sets={catalogname:catalogname,catalogid:catalogid,center:center,zoom:zoom,pitch:pitch,rotate:rotate,darkmode:darkmode};
             
           for(var i=0;i<id.length;i++){
               if(this.data.layers[id[i]].method=="vector-custom"){
@@ -167,9 +221,9 @@ Vue.component('catalogload', {
                 var style=this.data.layers[id[i]].style;
                 var systemrecovery=this.data.layers[id[i]].systemRecovery;
     
-                var settings={label:label,catalogname:catalogname,catalogid:catalogid,center:center,zoom:zoom,pitch:pitch,rotate:rotate,darkmode:darkmode,autoload:autoload, checked:checked, epsg:epsg, fields:fields, type:geotype, id:Id, indexcolumn:indexcolumn, lastIndex:lastindex, localrecovery:localrecovery, method:method, name:name, selectedindex:selectedindex, style:style,systemrecovery:systemrecovery };
+                var settings={labeling:label,autoLoad:autoload, checked:checked, srsname:epsg, fields:fields, geotype:geotype, id:Id, indexColumn:indexcolumn, lastIndex:lastindex, localRecovery:localrecovery, method:method, name:name, selectedIndex:selectedindex, style:style,systemRecovery:systemrecovery };
                 
-                GL.creteCatalogLayer(settings);
+                GL.creteCatalogLayer(settings,sets);
               }else if(this.data.layers[id[i]].method=="vector-url" && this.data.layers[id[i]].fileType!="excel"){
                 var url=this.data.layers[id[i]].url;
                 var fileType=this.data.layers[id[i]].fileType;
@@ -190,8 +244,8 @@ Vue.component('catalogload', {
                 var style=this.data.layers[id[i]].style;
                 var systemrecovery=this.data.layers[id[i]].systemRecovery;
     
-                var settings={label:label,url:url,fileType:fileType,catalogname:catalogname,catalogid:catalogid,center:center,zoom:zoom,pitch:pitch,rotate:rotate,darkmode:darkmode,autoload:autoload, checked:checked, epsg:epsg, fields:fields, type:geotype, id:Id, indexcolumn:indexcolumn, lastIndex:lastindex, localrecovery:localrecovery, method:method, name:name, selectedindex:selectedindex, style:style,systemrecovery:systemrecovery };
-                GL.creteCatalogLayer(settings);
+                var settings={labeling:label,url:url,fileType:fileType,darkmode:darkmode,autoLoad:autoload, checked:checked, srsname:epsg, fields:fields, geotype:geotype, id:Id, indexColumn:indexcolumn, lastIndex:lastindex, localRecovery:localrecovery, method:method, name:name, selectedIndex:selectedindex, style:style,systemRecovery:systemrecovery };
+                GL.creteCatalogLayer(settings,sets);
               }else if(this.data.layers[id[i]].method=="createWFS"){
                 var url=this.data.layers[id[i]].url;
                 var autoload=this.data.layers[id[i]].autoLoad;
@@ -214,8 +268,8 @@ Vue.component('catalogload', {
                 var style=this.data.layers[id[i]].style;
                 var systemrecovery=this.data.layers[id[i]].systemRecovery;
     
-                var settings={version:version,typename:typename,label:label,url:url,catalogname:catalogname,catalogid:catalogid,center:center,zoom:zoom,pitch:pitch,rotate:rotate,darkmode:darkmode,autoload:autoload, checked:checked, epsg:epsg, fields:fields, type:geotype, id:Id, indexcolumn:indexcolumn, lastIndex:lastindex, localrecovery:localrecovery, method:method, name:name, selectedindex:selectedindex, style:style,systemrecovery:systemrecovery };
-                GL.creteCatalogLayer(settings);
+                var settings={version:version,typename:typename,labeling:label,url:url,darkmode:darkmode,autoLoad:autoload, checked:checked, srsname:epsg, fields:fields, geotype:geotype, id:Id, indexColumn:indexcolumn, lastIndex:lastindex, localRecovery:localrecovery, method:method, name:name, selectedIndex:selectedindex, style:style,systemRecovery:systemrecovery };
+                GL.creteCatalogLayer(settings,sets);
               }else if(this.data.layers[id[i]].method=="createWMS"){
                 var url=this.data.layers[id[i]].url;
                 var autoload=this.data.layers[id[i]].autoLoad;
@@ -238,8 +292,8 @@ Vue.component('catalogload', {
                 var style=this.data.layers[id[i]].style;
                 var systemrecovery=this.data.layers[id[i]].systemRecovery;
     
-                var settings={opacity:opacity,minzoom:minzoom,maxzoom:maxzoom,selectedType:selectedType,version:version,typename:typename,url:url,catalogname:catalogname,catalogid:catalogid,center:center,zoom:zoom,pitch:pitch,rotate:rotate,darkmode:darkmode,autoload:autoload, checked:checked, epsg:epsg, type:geotype, id:Id, localrecovery:localrecovery, method:method, name:name, selectedindex:selectedindex,systemrecovery:systemrecovery };
-                GL.creteCatalogLayer(settings);
+                var settings={opacity:opacity,minZoom:minzoom,maxZoom:maxzoom,selectedType:selectedType,version:version,typename:typename,url:url,autoLoad:autoload, checked:checked, srsname:epsg, geotype:geotype, id:Id, localRecovery:localrecovery, method:method, name:name, selectedIndex:selectedindex,systemRecovery:systemrecovery };
+                GL.creteCatalogLayer(settings,sets);
               }else if(this.data.layers[id[i]].method=="createWMTS"){
                 var url=this.data.layers[id[i]].url;
                 var autoload=this.data.layers[id[i]].autoLoad;
@@ -260,8 +314,8 @@ Vue.component('catalogload', {
                 var style=this.data.layers[id[i]].style;
                 var systemrecovery=this.data.layers[id[i]].systemRecovery;
     
-                var settings={opacity:opacity,minzoom:minzoom,maxzoom:maxzoom,selectedType:selectedType,url:url,catalogname:catalogname,catalogid:catalogid,center:center,zoom:zoom,pitch:pitch,rotate:rotate,darkmode:darkmode,autoload:autoload, checked:checked, epsg:epsg, type:geotype, id:Id, localrecovery:localrecovery, method:method, name:name, selectedindex:selectedindex,systemrecovery:systemrecovery };
-                GL.creteCatalogLayer(settings);
+                var settings={opacity:opacity,minZoom:minzoom,maxZoom:maxzoom,selectedType:selectedType,url:url,autoLoad:autoload, checked:checked, srsname:epsg, geotype:geotype, id:Id, localRecovery:localrecovery, method:method, name:name, selectedIndex:selectedindex,systemRecovery:systemrecovery };
+                GL.creteCatalogLayer(settings,sets);
               }else if(this.data.layers[id[i]].method=="createXYZ"){
                 var url=this.data.layers[id[i]].url;
                 var autoload=this.data.layers[id[i]].autoLoad;
@@ -282,8 +336,8 @@ Vue.component('catalogload', {
                 var style=this.data.layers[id[i]].style;
                 var systemrecovery=this.data.layers[id[i]].systemRecovery;
     
-                var settings={opacity:opacity,minzoom:minzoom,maxzoom:maxzoom,label:label,url:url,catalogname:catalogname,catalogid:catalogid,center:center,zoom:zoom,pitch:pitch,rotate:rotate,darkmode:darkmode,autoload:autoload, checked:checked, epsg:epsg, type:geotype, id:Id, localrecovery:localrecovery, method:method, name:name, selectedindex:selectedindex,systemrecovery:systemrecovery };
-                GL.creteCatalogLayer(settings);
+                var settings={opacity:opacity,minZoom:minzoom,maxZoom:maxzoom,labeling:label,url:url,autoLoad:autoload, checked:checked, srsname:epsg, geotype:geotype, id:Id, localRecovery:localrecovery, method:method, name:name, selectedIndex:selectedindex,systemRecovery:systemrecovery };
+                GL.creteCatalogLayer(settings,sets);
               }else if(this.data.layers[id[i]].method=="createMVT"){
                 var url=this.data.layers[id[i]].url;
                 var autoload=this.data.layers[id[i]].autoLoad;
@@ -306,8 +360,8 @@ Vue.component('catalogload', {
                 var style=this.data.layers[id[i]].style;
                 var systemrecovery=this.data.layers[id[i]].systemRecovery;
     
-                var settings={style:style,typename:typename,opacity:opacity,minzoom:minzoom,maxzoom:maxzoom,label:label,url:url,catalogname:catalogname,catalogid:catalogid,center:center,zoom:zoom,pitch:pitch,rotate:rotate,darkmode:darkmode,autoload:autoload, checked:checked, epsg:epsg, type:geotype, id:Id, localrecovery:localrecovery, method:method, name:name, selectedindex:selectedindex,systemrecovery:systemrecovery };
-                GL.creteCatalogLayer(settings);
+                var settings={style:style,typename:typename,opacity:opacity,minZoom:minzoom,maxZoom:maxzoom,labeling:label,url:url,autoLoad:autoload, checked:checked, srsname:epsg, geotype:geotype, id:Id, localRecovery:localrecovery, method:method, name:name, selectedIndex:selectedindex,systemRecovery:systemrecovery };
+                GL.creteCatalogLayer(settings,sets);
               }else if(this.data.layers[id[i]].method=="createPBF"){
                 var url=this.data.layers[id[i]].url;
                 var autoload=this.data.layers[id[i]].autoLoad;
@@ -330,8 +384,8 @@ Vue.component('catalogload', {
                 var style=this.data.layers[id[i]].style;
                 var systemrecovery=this.data.layers[id[i]].systemRecovery;
     
-                var settings={style:style,typename:typename,opacity:opacity,minzoom:minzoom,maxzoom:maxzoom,label:label,url:url,catalogname:catalogname,catalogid:catalogid,center:center,zoom:zoom,pitch:pitch,rotate:rotate,darkmode:darkmode,autoload:autoload, checked:checked, epsg:epsg, type:geotype, id:Id, localrecovery:localrecovery, method:method, name:name, selectedindex:selectedindex,systemrecovery:systemrecovery };
-                GL.creteCatalogLayer(settings);
+                var settings={style:style,typename:typename,opacity:opacity,minZoom:minzoom,maxZoom:maxzoom,labeling:label,url:url,autoLoad:autoload, checked:checked, srsname:epsg, geotype:geotype, id:Id, localRecovery:localrecovery, method:method, name:name, selectedIndex:selectedindex,systemRecovery:systemrecovery };
+                GL.creteCatalogLayer(settings,sets);
               }else if(this.data.layers[id[i]].method=="vector-url" && this.data.layers[id[i]].fileType=="excel"){
                 var url=this.data.layers[id[i]].url;
                 var fileType=this.data.layers[id[i]].fileType;
@@ -355,8 +409,8 @@ Vue.component('catalogload', {
                 var style=this.data.layers[id[i]].style;
                 var systemrecovery=this.data.layers[id[i]].systemRecovery;
     
-                var settings={wktcolumn:wktcolumn,pageinfo:pageinfo,label:label,url:url,fileType:fileType,catalogname:catalogname,catalogid:catalogid,center:center,zoom:zoom,pitch:pitch,rotate:rotate,darkmode:darkmode,autoload:autoload, checked:checked, epsg:epsg, fields:fields, type:geotype, id:Id, indexcolumn:indexcolumn, lastIndex:lastindex, localrecovery:localrecovery, method:method, name:name, selectedindex:selectedindex, style:style,systemrecovery:systemrecovery };
-                GL.creteCatalogLayer(settings);
+                var settings={wktcolumn:wktcolumn,pageinfo:pageinfo,labeling:label,url:url,fileType:fileType,autoLoad:autoload, checked:checked, srsname:epsg, fields:fields, geotype:geotype, id:Id, indexColumn:indexcolumn, lastIndex:lastindex, localRecovery:localrecovery, method:method, name:name, selectedIndex:selectedindex, style:style,systemRecovery:systemrecovery };
+                GL.creteCatalogLayer(settings,sets);
               }
                 
           }
@@ -372,8 +426,34 @@ Vue.component('catalogload', {
                 this.activeLayers.push(j);
             }
           }
-          console.log(this.activeLayers);
           this.getCatalogSettings(this.activeLayers);
+      },
+      showCatalog:function(id){
+        GL.titresim();
+        this.layers=[];
+        for(var i=0;i<this.catalogs.length;i++){
+          if(id==this.catalogs[i].id){
+            this.data=this.catalogs[i];
+            this.catalogName=this.data.name;
+            this.listLayer(this.catalogs[i]);
+            this.setPage("tab2");
+          }
+        }
+      },
+      deleteCatalog:function(id,i){
+        var that=this;
+        mydialog.$children[0].open({
+          header:'Katalog Silme',
+          content:'Kataloğu Silmek istediğinizden emin misiniz?',
+          buttons:[
+            {id:'evet',title:'Evet',callback:function(a){
+              that.catalogs.splice(i,1);
+              localStorage.removeItem('GL-Catalog');
+              GL.savelocalstorage("GL-Catalog",that.catalogs);
+              GL.bilgi("Kayıt Silindi.");
+            }}
+          ]
+        });   
       }
   },
   template:
@@ -408,8 +488,9 @@ Vue.component('catalogload', {
             // tab2
             '<div :class="pages[1].class">'+
             '<div class="section full mt-1">'+
-                '<div class="section-title">{{catalogName}}</div>'+
+                //'<div class="section-title">{{catalogName}}</div>'+
                 '<div class="wide-block pt-2 pb-2">'+
+                    '<label>{{catalogName}}</label>'+
                     '<ul class="listview simple-listview" >'+
                         '<li style="padding:0;" v-for="(item,i) in layers">'+
                             '<div>{{item.name}}</div>'+
@@ -420,7 +501,7 @@ Vue.component('catalogload', {
                         '</li>'+
                     '</ul>'+
 
-                    '<div class="form-group boxed">'+
+                    '<div v-if="layers.length>0" class="form-group boxed">'+
                         '<div class="form-group basic">'+
                             '<div class="input-wrapper">'+
                             '<button @click="getActive" type="button" class="btn btn-primary btn-block">Kaydet</button>'+
@@ -435,10 +516,20 @@ Vue.component('catalogload', {
             // tab3
             '<div :class="pages[2].class">'+
             '<div class="section full mt-1">'+
-                '<div class="section-title">Tab 3</div>'+
+                //'<div class="section-title">Tab 3</div>'+
                 '<div class="wide-block pt-2 pb-2">'+
   
-                  'tab3'+
+                '<ul class="listview link-listview">'+
+                //<button type="button" class="btn btn-primary mr-1 mb-1">PRIMARY</button>
+                  '<li v-for="(item,i) in catalogs" style="padding:10px;">'+
+                          '<div>{{item.name}}</div>'+
+                          '<div style="padding-right:5px;"><button @click="deleteCatalog(item.id,i)" type="button" class="btn btn-text-primary">Sil</button>'+
+                          '<button @click="showCatalog(item.id)" type="button" class="btn btn-text-primary">Göster</button></div>'+
+                          
+                          //'<button type="button" class="btn btn-primary btn-sm" >Göster</button>'+
+                          //'<span class="text-muted">Göster</span>'+
+                  '</li>'+
+                '</ul>'+
   
                 '</div>'+
             '</div>'+

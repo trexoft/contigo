@@ -35,17 +35,15 @@ Vue.component('layerbox', {
         var that=this;
         var sources=GL.layerbox.sources;
         
-        
-        
         sources.map(function (item) {
-            var info=that.getImg(item.type);
+            var info=that.getImg(item.geotype);
             var img=info.img;
             var typeName=info.name;
 
             var color=that.getColor(item.id);
             var color_info=color.color;
             var style="width: 100%; background-color:"+color_info+" !important;";
-            var s={id:item.id,name:item.name,type:item.type,layers:item.layers,img:img,typeName:typeName, style:style};
+            var s={id:item.id,name:item.name,geotype:item.geotype,layers:item.layers,img:img,typeName:typeName, style:style};
             that.activeSources.push(s);
         });
       },
@@ -70,7 +68,7 @@ Vue.component('layerbox', {
       console.log(obj);
       GL.titresim();
       var that=this;
-      if(obj.type=="wms" || obj.type=="xyz" || obj.type=="wmts"){
+      if(obj.geotype=="wms" || obj.geotype=="xyz" || obj.geotype=="wmts"){
         actionsheet.$children[0].open({
           header:'Seçenekler - '+obj.name,
           buttons:[
