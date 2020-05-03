@@ -72,6 +72,20 @@ GL.map.on('moveend',function(res){
   var hash = window.location.hash.substr(1);
   localStorage.setItem("maphash",hash);
   GL.step.add({type:'map',url:hash});
+  //buğra
+  // wfs katmanların yüklenmesi gereken bbox değerini burdan alabilirsin böylece sadece bir bbox değerine maruz kalmayız. 
+});
+
+GL.map.on('click',function(e){
+  var alllayers = GL.layerbox.layers;
+  var layers = [];
+  alllayers.map(function(layer){
+    layers.push(layer.id);
+  });
+  var features = GL.map.queryRenderedFeatures(e.point, {
+    layers: layers
+  });
+  infopanels.$children[0].pushGeoJSON(features)
 });
 
 GL.geolocation = new mapboxgl.GeolocateControl({
