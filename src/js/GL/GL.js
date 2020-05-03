@@ -98,18 +98,24 @@ GL.map.on('click',function(e){
 
 GL.touch = {
   startTime:0,
-  endTime:0
+  endTime:0,
+  startCenter:[],
+  endCenter:[]
 }
 
 GL.map.on('touchstart',function(e){
   GL.touch.startTime = Date.now();
+  GL.touch.startCenter = GL.map.getCenter();
 });
 
 GL.map.on('touchend',function(e){
   //burası click gibi çalışıyor mobil için
   GL.touch.endTime = Date.now();
+  GL.touch.endCenter = GL.map.getCenter();
+  var center1 = GL.touch.startCenter;
+  var center2 = GL.touch.endCenter;
   var fark = GL.touch.endTime-GL.touch.startTime;
-  if(fark>0 && fark<500){
+  if((fark>0 && fark<500) && (center1.lng==center2.lng && center1.lat==center2.lat)){
     GL.touch.startTime = Date.now();
     if(GL.layerbox!==undefined){
       if(GL.config.gettingInformation){
