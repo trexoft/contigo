@@ -38,6 +38,7 @@ Vue.component('infopanel', {
             GL.uyari("Herangi Bir bilgiye rastlanılmamıştır");
           }
         }
+        GL.loading(false);
       }
   },
   template:
@@ -45,8 +46,8 @@ Vue.component('infopanel', {
     '<div class="modal fade panelbox panelbox-right" id="infoPanel" tabindex="-1" role="dialog">'+
       '<div class="modal-dialog" role="document">'+
         '<div class="modal-content">'+
-          '<div class="modal-header" style="margin-bottom: 0;">'+
-            '<h4 class="modal-title">Geometrinin Bilgileri</h4>'+
+          '<div class="modal-header" style="margin-bottom: 0; background-color: #8BC34A;">'+
+            '<h4 class="modal-title" style="color: #fff !important;">Geometrinin Bilgileri</h4>'+
             '<a href="javascript:;" data-dismiss="modal" class="panel-close"> <ion-icon name="close-outline"></ion-icon> </a>'+
           '</div>'+
           '<div class="modal-body" style="padding: 0;">'+

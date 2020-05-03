@@ -119,6 +119,7 @@ GL.map.on('touchend',function(e){
     GL.touch.startTime = Date.now();
     if(GL.layerbox!==undefined){
       if(GL.config.gettingInformation){
+        GL.loading("Bilgiler Alınıyor");
         var alllayers = GL.layerbox.layers;
         var layers = [];
         alllayers.map(function(layer){
