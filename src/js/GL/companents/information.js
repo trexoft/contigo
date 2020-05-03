@@ -45,7 +45,7 @@ Vue.component('infopanel', {
     '<div class="modal fade panelbox panelbox-right" id="infoPanel" tabindex="-1" role="dialog">'+
       '<div class="modal-dialog" role="document">'+
         '<div class="modal-content">'+
-          '<div class="modal-header">'+
+          '<div class="modal-header" style="margin-bottom: 0;">'+
             '<h4 class="modal-title">Geometrinin Bilgileri</h4>'+
             '<a href="javascript:;" data-dismiss="modal" class="panel-close"> <ion-icon name="close-outline"></ion-icon> </a>'+
           '</div>'+
