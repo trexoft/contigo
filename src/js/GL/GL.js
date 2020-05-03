@@ -12,6 +12,7 @@ GL.config = {
   pitch:0,
   rotate:0,
   clientHeight:300,
+  gettingInformation:true,
   colors:['#f44336', '#e91e63', '#9c27b0', '#673ab7', '#3f51b5', '#2196f3', '#03a9f4', '#00bcd4', '#009688', '#4caf50', '#8bc34a', '#cddc39', '#ffeb3b', '#ffc107', '#ff9800', '#ff5722', '#795548', '#9e9e9e', '#607d8b']
 
 };
@@ -68,6 +69,8 @@ GL.map = new mapboxgl.Map({
   rotate:GL.config.rotate
 });
 
+//GL.map.doubleClickZoom.disable();
+
 GL.map.on('moveend',function(res){
   var hash = window.location.hash.substr(1);
   localStorage.setItem("maphash",hash);
@@ -77,16 +80,75 @@ GL.map.on('moveend',function(res){
 });
 
 GL.map.on('click',function(e){
-  var alllayers = GL.layerbox.layers;
-  var layers = [];
-  alllayers.map(function(layer){
-    layers.push(layer.id);
-  });
-  var features = GL.map.queryRenderedFeatures(e.point, {
-    layers: layers
-  });
-  infopanels.$children[0].pushGeoJSON(features)
+  debugger;
+  if(GL.layerbox!==undefined){
+    if(GL.config.gettingInformation){
+      var alllayers = GL.layerbox.layers;
+      var layers = [];
+      alllayers.map(function(layer){
+        layers.push(layer.id);
+      });
+      var features = GL.map.queryRenderedFeatures(e.point, {
+        layers: layers
+      });
+      infopanels.$children[0].pushGeoJSON(features);
+    }
+  }
 });
+
+GL.touch = {
+  startTime:0,
+  endTime:0
+}
+
+GL.map.on('touchstart',function(e){
+  GL.touch.startTime = Date.now();
+});
+
+GL.map.on('touchend',function(e){
+  GL.touch.endTime = Date.now();
+  var fark = GL.touch.endTime-GL.touch.startTime;
+  if(fark>0 && fark<2500){
+    GL.touch.startTime = Date.now();
+    if(GL.layerbox!==undefined){
+      if(GL.config.gettingInformation){
+        var alllayers = GL.layerbox.layers;
+        var layers = [];
+        alllayers.map(function(layer){
+          layers.push(layer.id);
+        });
+        var features = GL.map.queryRenderedFeatures(e.point, {
+          layers: layers
+        });
+        infopanels.$children[0].pushGeoJSON(features);
+      }
+    }
+  }
+});
+
+
+/*GL.map.getCanvas().addEventListener('touch',function(e){
+  debugger;
+  if(GL.config.gettingInformation){
+    var alllayers = GL.layerbox.layers;
+    var layers = [];
+    alllayers.map(function(layer){
+      layers.push(layer.id);
+    });
+    var features = GL.map.queryRenderedFeatures(e.point, {
+      layers: layers
+    });
+    infopanels.$children[0].pushGeoJSON(features);
+  }
+},true);*/
+
+GL.information = function(status){
+  if(status){
+    GL.config.gettingInformation=true;
+  }else{
+    GL.config.gettingInformation=false;
+  }
+}
 
 GL.geolocation = new mapboxgl.GeolocateControl({
   positionOptions: {
