@@ -109,7 +109,7 @@ GL.map.on('touchend',function(e){
   //burası click gibi çalışıyor mobil için
   GL.touch.endTime = Date.now();
   var fark = GL.touch.endTime-GL.touch.startTime;
-  if(fark>0 && fark<2500){
+  if(fark>0 && fark<500){
     GL.touch.startTime = Date.now();
     if(GL.layerbox!==undefined){
       if(GL.config.gettingInformation){
