@@ -39,6 +39,82 @@ Vue.component('infopanel', {
           }
         }
         GL.loading(false);
+      },
+      settings:function(item){
+        $("#infoPanel").modal('hide');
+        mydialog.$children[0].open({
+          header:'Seçenekler',
+          content:'Bu geometriye hangi işlemi yapmak istersiniz?',
+          buttons:[
+            {id:'showonmap',title:'Haritada Göster',callback:function(a){
+              // zoom to feature
+              var geojson={type:'FeatureCollection',features:[]};
+              GL.map.getSource("ShowLayer").setData(item);
+              GL.zoomFeature(item);
+              setTimeout(function(){
+                GL.map.getSource("ShowLayer").setData(geojson);
+              },3000)
+            }},
+            {id:'select',title:'Geometriyi Seç',callback:function(a){
+              console.log(item);
+              var s=GL.layerbox.getSource("SelectLayer");
+              s.geojson.features.push(item);
+              GL.map.getSource("SelectLayer").setData(s.geojson);
+              var geojson={type:'FeatureCollection',features:[]};
+              GL.map.getSource("InfoLayer").setData(geojson);
+              console.log(s.geojson);
+              var index=item.properties.index;
+
+              var source=GL.layerbox.getSource(item.source);
+              source.selectedIndex.push(index);
+            }},
+            {id:'download',title:'Geometriyi İndir',callback:function(a){
+              console.log(item);
+              var geojson={type:'FeatureCollection',features:[]};
+              var index=item.properties.index;
+              var source=GL.layerbox.getSource(item.source);
+              var features=source.geojson.features;
+              for (var i=0; i<features.length; i++){
+                if(features[i].properties.index==index){
+                  geojson.features.push(features[i]);
+                  break
+                }
+              }
+              var reader = new ol.format.GeoJSON();
+              var features=reader.readFeatures(geojson);
+        
+              var geojson2 = reader.writeFeatures(features, {});
+              download(geojson2, item.layerName+"-feature"+ ".geojson", "text/plain");
+              GL.bilgi("Geometri indirildi");
+            }},
+            {id:'delete',title:'Geometriyi Sil',callback:function(a){
+              mydialog.$children[0].close(a.modal,false);
+
+              setTimeout(function() {
+                mydialog.$children[0].open({
+                  header:'Katman Silme',
+                  content:'Geometriyi silmek istediğinizden emin misiniz?',
+                  buttons:[
+                    {id:'evet',title:'Evet',callback:function(a){
+                      var index=item.properties.index;
+                      var source=GL.layerbox.getSource(item.source);
+                      var features=source.geojson.features;
+                      for (var i=0; i<features.length; i++){
+                        if(features[i].properties.index==index){
+                          features.splice(i,1);
+                          break
+                        }
+                      }
+                      GL.map.getSource(item.source).setData(source.geojson);
+                      GL.bilgi("Geometri silindi");
+                    }}
+                  ]
+                });   
+              }, 400);
+              
+            }}
+          ]
+        });   
       }
   },
   template:
@@ -58,6 +134,7 @@ Vue.component('infopanel', {
                 '</div>'+
                 '<div :id="\'infoPanelaccordion\'+sira" class="accordion-body collapse" data-parent="#infoPanelAcrd">'+
                   '<div class="accordion-content">'+
+                    '<button @click="settings(item)" type="button" class="btn btn-primary btn-sm btn-block">Ayarlar</button>'+
                     '<table class="table">'+
                       '<thead><tr><th>Özellik</th><th>Değer</th></tr></thead>'+
                       '<tbody>'+

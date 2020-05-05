@@ -128,6 +128,161 @@ GL.map.on('touchend',function(e){
         var features = GL.map.queryRenderedFeatures(e.point, {
           layers: layers
         });
+
+        // Boş yere tıklanınca info katmanını temizle
+        if(features.length==0){
+          GL.clearFilters();
+        }
+
+        // eğer tıklanan "selectLayer" katmanı içerisindeyse "sselect" seçimini kaldır
+        if(features.length!=0){
+          for(var k=0;k<features.length;k++){
+            var selectedSource=GL.layerbox.getSource(features[k].source);
+            if(selectedSource.id=="SelectLayer"){
+              for(var i=0;i<selectedSource.geojson.features.length;i++){
+                var sourceIndex=GL.layerbox.getSource(selectedSource.geojson.features[i].source);
+                if(sourceIndex.selectedIndex.indexOf(selectedSource.geojson.features[i].properties.index)!=-1 && features[k].properties.index==selectedSource.geojson.features[i].properties.index){
+                  sourceIndex.selectedIndex.splice(sourceIndex.selectedIndex.indexOf(selectedSource.geojson.features[i].properties.index),1);
+                  var selectedSource2=GL.layerbox.getSource("SelectLayer");
+                  for(var j=0;j<selectedSource2.geojson.features.length;j++){
+                    if(selectedSource2.geojson.features[j].properties.index==selectedSource.geojson.features[i].properties.index){
+                      selectedSource2.geojson.features.splice(j,1);
+                      GL.map.getSource("SelectLayer").setData(selectedSource2.geojson);
+                      GL.clearFilters();
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+        
+
+        // info select ve showlayer seçimlerini listeden sil
+        for(var j=0; j<features.length;j++){
+          if(features[j].source=="InfoLayer"){
+            features.splice(j,1);
+          }
+        }
+        for(var j=0; j<features.length;j++){
+          if(features[j].source=="SelectLayer"){
+            features.splice(j,1);
+          }
+        }
+        for(var j=0; j<features.length;j++){
+          if(features[j].source=="ShowLayer"){
+            features.splice(j,1);
+          }
+        }
+
+        // Seçim indekslerini buraya at
+        var fillIndexes=[]; // polygon
+        var lineIndexes=[]; //line
+        var circleIndexes=[]; //point
+
+        // Seçilen featureların source bilgisini al
+        var sources=[];
+        if(features.length!=0){
+          for(var i=0; i<features.length;i++){
+            var newSource=features[i].source;
+            if(sources.indexOf(newSource)==-1){
+              sources.push(newSource);
+            }
+          }
+        }
+
+        // source içerisinde SelecteddIndex te eğer değer varsa onları listeye ekler.
+        if(features.length!=0){
+          for (var f=0;f<sources.length;f++){
+            var sourcee=GL.layerbox.getSource(features[f].source);
+            if(sourcee.selectedIndex.length>0){
+              for(var k=0;k<sourcee.selectedIndex.length;k++){
+                var val=sourcee.selectedIndex[k];
+                var a=sourcee.geojson.features.findIndex(x => x.properties.index==sourcee.selectedIndex[k]);
+                var ind=sourcee.geojson.features[a].properties.geotype;
+                if(ind=="Point"){
+                  circleIndexes.push(val);
+                }
+                if(ind=="LineString"){
+                  lineIndexes.push(val);
+                }
+                if(ind=="Polygon"){
+                  fillIndexes.push(val);
+                }
+              }
+            }
+          }
+        }
+
+        // Seçilen featureları listeye aktarır.
+        if(features.length!=0){
+          var geojson={type:'FeatureCollection',features:[]};
+          features.map(function(feat){
+            var index=feat.properties.index;
+            var f=GL.layerbox.getSource(feat.source);
+
+            for(var i=0; i<f.geojson.features.length;i++){
+              if(f.geojson.features[i].properties.index==index){
+                geojson.features.push(f.geojson.features[i]);
+                if(f.geojson.features[i].properties.geotype=="Polygon"){
+                  fillIndexes.push(f.geojson.features[i].properties.index);
+                }
+                if(f.geojson.features[i].properties.geotype=="LineString" || f.geojson.features[i].properties.geotype=="MultiLineString"){
+                  lineIndexes.push(f.geojson.features[i].properties.index);
+                }
+                if(f.geojson.features[i].properties.geotype=="Point"){
+                  circleIndexes.push(f.geojson.features[i].properties.index);
+                } 
+              }
+            }
+          })
+
+          for(var j=0;j<sources.length;j++){
+            // Eski seçimleri tekrar görünür yapar
+            GL.map.setFilter(sources[j]+"-polygon",
+            ["==", ["geometry-type"], "Polygon"]);
+
+            GL.map.setFilter(sources[j]+"-line",
+            ["==", ["geometry-type"], "LineString"]);
+
+
+            GL.map.setFilter(sources[j]+"-point",
+            ["==", ["geometry-type"], "Point"]);
+          }
+          
+        
+          
+          // Yeni seçimleri filtreler
+          if(fillIndexes.length>0){
+            for(var j=0;j<sources.length;j++){
+              GL.map.setFilter(sources[j]+"-polygon",
+              ["all",["==", ["geometry-type"], "Polygon"],
+              ['!',['in', ["number","get","properties",["get","index"]],["literal", fillIndexes]]]]);
+            }
+          }
+          
+          if(lineIndexes.length>0){
+            for(var j=0;j<sources.length;j++){
+              GL.map.setFilter(sources[j]+"-line",
+              ["all",["==", ["geometry-type"], "LineString"],
+              ['!',['in', ["number","get","properties",["get","index"]],["literal", lineIndexes]]]]);
+            }
+          }
+          
+          if(circleIndexes>0){
+            for(var j=0;j<sources.length;j++){
+              GL.map.setFilter(sources[j]+"-point", 
+              ["all",["==", ["geometry-type"], "Point"],
+              ['!',['in', ["number","get","properties",["get","index"]],["literal", circleIndexes]]]]);
+            }
+          }
+          
+          // Info katmanına aktarma 
+          var s=GL.layerbox.getSource("InfoLayer");
+          s.geojson=geojson;
+          GL.map.getSource("InfoLayer").setData(s.geojson);
+        }
+        
         infopanels.$children[0].pushGeoJSON(features);
       }
     }
@@ -466,11 +621,15 @@ GL.zoomFeature=function(feature){
   }else if(feature.geometry.type=="LineString"){
     var line = turf.lineString(feature.geometry.coordinates);
     var bbox = turf.bbox(line);
-    GL.map.fitBounds([[bbox[0],bbox[1]],[bbox[2],bbox[3]]]);
+    GL.map.fitBounds([[bbox[0],bbox[1]],[bbox[2],bbox[3]]],{
+      padding: 25,
+    });
   }else if(feature.geometry.type=="Polygon"){
     var polygon = turf.polygon(feature.geometry.coordinates);
     var bbox = turf.bbox(polygon);
-    GL.map.fitBounds([[bbox[0],bbox[1]],[bbox[2],bbox[3]]]);
+    GL.map.fitBounds([[bbox[0],bbox[1]],[bbox[2],bbox[3]]],{
+      padding: 25,
+    });
   }
   //GL.map.setPaintProperty(
   //  feature.layerId, 
@@ -692,9 +851,8 @@ GL.addGeojsonToLayer=function(geojson,layerid,color,info){
     props={};
   }
   var fields = GL.datatable.getFieldsFromProperties(props);
-  console.log(fields);
   var indexhave = props["index"]!==undefined;
-  var index = 0;
+  var index = 1;
   if(indexhave){
     geojson.features.map(function(gjson){
       var ind = gjson.properties.index;
@@ -730,7 +888,7 @@ GL.addGeojsonToLayer=function(geojson,layerid,color,info){
 
   GL.map.addSource(layerid, { 'type': 'geojson', 'data': geojson });
 
-  var inf={id:layerid,name:info.name,geotype:info.type,layers:[layerid+"-point",layerid+"-line",layerid+"-polygon"],geojson:geojson,fields:fields,lastIndex:index}
+  var inf={id:layerid,name:info.name,geotype:info.type,layers:[layerid+"-point",layerid+"-line",layerid+"-polygon"],geojson:geojson,fields:fields,lastIndex:index,selectedIndex:[]}
   GL.layerbox.sources.push(inf);
 
   GL.map.addLayer({
@@ -1369,7 +1527,7 @@ GL.createVectorLayer=function(data){
 // Layer History
   GL.addLayerHistory(catalogLayer);
 
-  var inf={id:layerid,fields:data.fields,name:data.name,type:data.type.selected,layers:[layerid+"-point",layerid+"-line",layerid+"-polygon"],geojson:source,lastIndex:0,catalogInfo:catalogLayer};
+  var inf={id:layerid,fields:data.fields,name:data.name,geotype:data.geotype.selected,layers:[layerid+"-point",layerid+"-line",layerid+"-polygon"],geojson:source,lastIndex:0,catalogInfo:catalogLayer,selectedIndex:[]};
   GL.layerbox.sources.push(inf);
 
   //visibility
@@ -1392,7 +1550,7 @@ GL.createVectorLayer=function(data){
   }
 
   if(data.paint.status==false){
-    if(data.type.selected=="collection"){
+    if(data.geotype.selected=="collection"){
       GL.map.addLayer({
         'id': layerid+'-point',
         'type': 'circle',
@@ -1533,7 +1691,7 @@ GL.createVectorLayer=function(data){
     }
     
   }else if(data.paint.status==true){
-    if(data.type.selected=="collection"){
+    if(data.geotype.selected=="collection"){
       GL.map.addLayer({
         'id': layerid+'-point',
         'type': 'circle',
@@ -1594,7 +1752,7 @@ GL.createVectorLayer=function(data){
         GL.layerbox.layers.push(infLayer3);
     
       },100)
-    }else if(data.type.selected=="point"){
+    }else if(data.geotype.selected=="point"){
       GL.map.addLayer({
         'id': layerid+'-point',
         'type': 'circle',
@@ -1619,7 +1777,7 @@ GL.createVectorLayer=function(data){
         GL.layerbox.layers.push(infLayer1);
     
       },100)
-    }else if(data.type.selected=="linestring"){
+    }else if(data.geotype.selected=="linestring"){
       GL.map.addLayer({
         'id': layerid+'-line',
         'type': 'line',
@@ -1641,7 +1799,7 @@ GL.createVectorLayer=function(data){
         var infLayer2={id:layerid+"-line",source:layerid,type:inf.type,features:features2,color:data.paint.color};
         GL.layerbox.layers.push(infLayer2);
       },100)
-    }else if(data.type.selected=="polygon"){
+    }else if(data.geotype.selected=="polygon"){
       GL.map.addLayer({
         'id': layerid+'-polygon',
         'type': 'fill',
@@ -2987,7 +3145,7 @@ GL.creteCustomCatalogLayer=function(data,layerid){
     "method":"vector-custom",
     "id":layerid,
     "name":data.name,
-    "geotype":data.type.selected,
+    "geotype":data.geotype.selected,
     "epsg":"EPSG:4326",
     "localRecovery":{
       "status":data.service,
@@ -3133,4 +3291,214 @@ GL.createXYZCatalogLayer=function(layerid,url,layername,min,max,opacity){
     "checked":true
   }
   return layer
+}
+
+GL.addInfoLayer=function(){
+  var layerid="InfoLayer";
+  var color="#1385d6";
+  var geojson={type:'FeatureCollection',features:[]};
+  GL.map.addSource(layerid, { 'type': 'geojson', 'data': geojson });
+
+  var inf={id:layerid,name:"Bilgi Katmanı",geotype:"collection",layers:[layerid+"-point",layerid+"-line",layerid+"-polygon"],geojson:geojson,status:false}
+  GL.layerbox.sources.push(inf);
+
+  GL.map.addLayer({
+      'id': layerid+'-point',
+      'type': 'circle',
+      'source': layerid,
+          'paint': {
+              'circle-radius': 4,
+              'circle-color': color
+          },
+          'filter': ['==', '$type', 'Point']
+  });
+  GL.map.addLayer({
+      'id': layerid+'-polygon',
+      'type': 'fill',
+      'source': layerid,
+          'paint': {
+              'fill-color': color,
+              'fill-opacity': 0.7
+          },
+          'filter': ['==', '$type', 'Polygon']
+  });
+  GL.map.addLayer({
+      'id': layerid+'-line',
+      'type': 'line',
+      'source': layerid,
+          'paint': {
+              'line-color': color,
+              'line-width': 2,
+              'line-dasharray':[2,2]
+          },
+          'filter': ['==', '$type', 'LineString']
+  });
+  
+  setTimeout(function(){
+    var features=GL.layerbox.getLayerFeature(layerid,layerid+'-point');
+    var features2=GL.layerbox.getLayerFeature(layerid,layerid+'-line');
+    var features3=GL.layerbox.getLayerFeature(layerid,layerid+'-polygon');
+
+    var infLayer1={id:layerid+"-point",source:layerid,type:"collection",features:features,color:color};
+    var infLayer2={id:layerid+"-line",source:layerid,type:"collection",features:features2,color:color};
+    var infLayer3={id:layerid+"-polygon",source:layerid,type:"collection",features:features3,color:color};
+    GL.layerbox.layers.push(infLayer1);
+    GL.layerbox.layers.push(infLayer2);
+    GL.layerbox.layers.push(infLayer3);
+
+  },100)
+  
+}
+
+setTimeout(function(){
+  GL.addInfoLayer();
+}, 2000);
+
+
+GL.addSelectLayer=function(){
+  var layerid="SelectLayer";
+  var color="#53C737";
+  var geojson={type:'FeatureCollection',features:[]};
+  GL.map.addSource(layerid, { 'type': 'geojson', 'data': geojson });
+
+  var inf={id:layerid,name:"Seçim Katmanı",geotype:"collection",layers:[layerid+"-point",layerid+"-line",layerid+"-polygon"],geojson:geojson,status:false}
+  GL.layerbox.sources.push(inf);
+
+  GL.map.addLayer({
+      'id': layerid+'-point',
+      'type': 'circle',
+      'source': layerid,
+          'paint': {
+              'circle-radius': 4,
+              'circle-color': color
+          },
+          'filter': ['==', '$type', 'Point']
+  });
+  GL.map.addLayer({
+      'id': layerid+'-polygon',
+      'type': 'fill',
+      'source': layerid,
+          'paint': {
+              'fill-color': color,
+              'fill-opacity': 0.7
+          },
+          'filter': ['==', '$type', 'Polygon']
+  });
+  GL.map.addLayer({
+      'id': layerid+'-line',
+      'type': 'line',
+      'source': layerid,
+          'paint': {
+              'line-color': color,
+              'line-width': 2,
+              'line-dasharray':[2,2]
+          },
+          'filter': ['==', '$type', 'LineString']
+  });
+  
+  setTimeout(function(){
+    var features=GL.layerbox.getLayerFeature(layerid,layerid+'-point');
+    var features2=GL.layerbox.getLayerFeature(layerid,layerid+'-line');
+    var features3=GL.layerbox.getLayerFeature(layerid,layerid+'-polygon');
+
+    var infLayer1={id:layerid+"-point",source:layerid,type:"collection",features:features,color:color};
+    var infLayer2={id:layerid+"-line",source:layerid,type:"collection",features:features2,color:color};
+    var infLayer3={id:layerid+"-polygon",source:layerid,type:"collection",features:features3,color:color};
+    GL.layerbox.layers.push(infLayer1);
+    GL.layerbox.layers.push(infLayer2);
+    GL.layerbox.layers.push(infLayer3);
+
+  },100)
+}
+
+setTimeout(function(){
+  GL.addSelectLayer();
+}, 2000);
+
+GL.addShowLayer=function(){
+  var layerid="ShowLayer";
+  var color="#cc2200";
+  var geojson={type:'FeatureCollection',features:[]};
+  GL.map.addSource(layerid, { 'type': 'geojson', 'data': geojson });
+
+  var inf={id:layerid,name:"Gösterim Katmanı",geotype:"collection",layers:[layerid+"-point",layerid+"-line",layerid+"-polygon"],geojson:geojson,status:false}
+  GL.layerbox.sources.push(inf);
+
+  GL.map.addLayer({
+      'id': layerid+'-point',
+      'type': 'circle',
+      'source': layerid,
+          'paint': {
+              'circle-radius': 4,
+              'circle-color': color
+          },
+          'filter': ['==', '$type', 'Point']
+  });
+  GL.map.addLayer({
+      'id': layerid+'-polygon',
+      'type': 'fill',
+      'source': layerid,
+          'paint': {
+              'fill-color': color,
+              'fill-opacity': 0.7
+          },
+          'filter': ['==', '$type', 'Polygon']
+  });
+  GL.map.addLayer({
+      'id': layerid+'-line',
+      'type': 'line',
+      'source': layerid,
+          'paint': {
+              'line-color': color,
+              'line-width': 2,
+              'line-dasharray':[2,2]
+          },
+          'filter': ['==', '$type', 'LineString']
+  });
+  
+  setTimeout(function(){
+    var features=GL.layerbox.getLayerFeature(layerid,layerid+'-point');
+    var features2=GL.layerbox.getLayerFeature(layerid,layerid+'-line');
+    var features3=GL.layerbox.getLayerFeature(layerid,layerid+'-polygon');
+
+    var infLayer1={id:layerid+"-point",source:layerid,type:"collection",features:features,color:color};
+    var infLayer2={id:layerid+"-line",source:layerid,type:"collection",features:features2,color:color};
+    var infLayer3={id:layerid+"-polygon",source:layerid,type:"collection",features:features3,color:color};
+    GL.layerbox.layers.push(infLayer1);
+    GL.layerbox.layers.push(infLayer2);
+    GL.layerbox.layers.push(infLayer3);
+
+  },100)
+}
+
+setTimeout(function(){
+  GL.addShowLayer();
+}, 2000);
+
+
+GL.clearFilters=function(){
+  var geojson={type:'FeatureCollection',features:[]};
+  var controlSource=[];
+  GL.map.getSource("InfoLayer").setData(geojson);
+  for(var i=0;i<GL.layerbox.layers.length;i++){
+    if(GL.layerbox.layers[i].source!="InfoLayer" && GL.layerbox.layers[i].source!="SelectLayer" && GL.layerbox.layers[i].source!="ShowLayer"){
+      if(controlSource.indexOf(GL.layerbox.layers[i].source)==-1){
+        controlSource.push(GL.layerbox.layers[i].source);
+        var getSource=GL.layerbox.getSource(GL.layerbox.layers[i].source);
+        // Get visible of layers
+        GL.map.setFilter(GL.layerbox.layers[i].source+"-polygon",
+          ["all",["==", ["geometry-type"], "Polygon"],
+          ['!',['in', ["number","get","properties",["get","index"]],["literal", getSource.selectedIndex]]]]);
+
+        GL.map.setFilter(GL.layerbox.layers[i].source+"-line",
+          ["all",["==", ["geometry-type"], "LineString"],
+          ['!',['in', ["number","get","properties",["get","index"]],["literal", getSource.selectedIndex]]]]);
+              
+              
+        GL.map.setFilter(GL.layerbox.layers[i].source+"-point",
+          ["all",["==", ["geometry-type"], "Point"],
+          ['!',['in', ["number","get","properties",["get","index"]],["literal", getSource.selectedIndex]]]]);
+      }
+    }
+  }
 }

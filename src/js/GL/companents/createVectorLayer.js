@@ -42,7 +42,7 @@ Vue.component('createvectorlayer', {
                     visibility:true
                   }
                 },
-                type:{selected:'collection',data:[
+                geotype:{selected:'collection',data:[
                   {value:'collection',text:'Hepsi'},
                   {value:'polygon',text:'Kapalı Alan'},
                   {value:'linestring',text:'Çizgi'},
@@ -188,19 +188,19 @@ Vue.component('createvectorlayer', {
             break;
           }
           case 'tab2':{
-            if(this.layer.type.selected=="collection"){
+            if(this.layer.geotype.selected=="collection"){
               this.area=true;
               this.line=true;
               this.point=true;
-            }else if(this.layer.type.selected=="polygon"){
+            }else if(this.layer.geotype.selected=="polygon"){
               this.area=true;
               this.line=false;
               this.point=false;
-            }else if(this.layer.type.selected=="linestring"){
+            }else if(this.layer.geotype.selected=="linestring"){
               this.area=false;
               this.line=true;
               this.point=false;
-            }else if(this.layer.type.selected=="point"){
+            }else if(this.layer.geotype.selected=="point"){
               this.area=false;
               this.line=false;
               this.point=true;
@@ -462,8 +462,8 @@ Vue.component('createvectorlayer', {
                         '<div class="form-group basic">'+
                           '<div class="input-wrapper">'+
                             '<label class="label" >Geometri Tipi :</label>'+
-                            '<select class="form-control custom-select" v-model="layer.type.selected">'+
-                              '<option v-for="opt in layer.type.data" :value="opt.value">{{opt.text}}</option>'+
+                            '<select class="form-control custom-select" v-model="layer.geotype.selected">'+
+                              '<option v-for="opt in layer.geotype.data" :value="opt.value">{{opt.text}}</option>'+
                             '</select>'+
                           '</div>'+
                         '</div>'+

@@ -36,6 +36,7 @@ Vue.component('layerbox', {
         var sources=GL.layerbox.sources;
         
         sources.map(function (item) {
+          if(item.status!=false){
             var info=that.getImg(item.geotype);
             var img=info.img;
             var typeName=info.name;
@@ -45,6 +46,7 @@ Vue.component('layerbox', {
             var style="width: 100%; background-color:"+color_info+" !important;";
             var s={id:item.id,name:item.name,geotype:item.geotype,layers:item.layers,img:img,typeName:typeName, style:style};
             that.activeSources.push(s);
+          }
         });
       },
       getImg:function(type){
@@ -99,6 +101,38 @@ Vue.component('layerbox', {
             }}
           ]
         });    
+
+      }else if(obj.geotype=="mvt" || obj.geotype=="pbf"){
+        actionsheet.$children[0].open({
+          header:'Seçenekler - '+obj.name,
+          buttons:[
+            {id:'settings',title:'Düzenle',callback:function(a){
+              //get features
+              var source=GL.layerbox.getSource(obj.id);
+
+              that.closee();
+            }},
+            {id:'share',title:'Paylaş',callback:function(a){
+              console.log(a);
+            }},
+            {id:'save',title:'Sisteme Kayıt Et',callback:function(a){
+              console.log(a);
+            }},
+            {id:'delete',title:'Katmanı Sil',callback:function(a){
+              actionsheet.$children[0].close(a.action,false);
+              that.closee();
+              mydialog.$children[0].open({
+                header:'Katman Silme',
+                content:obj.name+' katmanını silmek istediğinizden emin misiniz?',
+                buttons:[
+                  {id:'evet',title:'Evet',callback:function(a){
+                    GL.removeLayerByID(obj.id);
+                  }}
+                ]
+              });   
+            }}
+          ]
+        });   
 
       }else{
         actionsheet.$children[0].open({
