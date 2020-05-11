@@ -26,8 +26,8 @@ Vue.component('emptymodal', {
                         '<a @click="close" href="javascript:;" data-dismiss="modal">{{close}}</a>'+
                     '</div>'+
                     '<div class="modal-body p-0">'+
-                        '<div class="wide-block p-0">'+
-
+                        '<div class="section mt-4 mb-5">'+
+                        
                             'Modal Content'+
         
                         '</div>'+

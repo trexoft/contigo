@@ -70,6 +70,8 @@ var lang = {
       catalogCreate:"Katalog Oluştur",
       catalogList:"Katalogları Listele",
       catalogHistory:"Geçmişte Eklenen Katmanlar",
+      dataLibrary:"Veri Kütüphanesi",
+      overpass:"Overpass Api"
     },
     fileupload:{
       label:'Vektör Dosya Ekleme',

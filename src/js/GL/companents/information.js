@@ -14,9 +14,11 @@ Vue.component('infopanel', {
         $("#infoPanel").modal('show');
       },
       close:function(e){
-        this.onoff = false;
-        $("#infoPanel").modal('hide');
+        //this.onoff = false;
+        //$("#infoPanel").modal('hide');
         this.geojson.features = [];
+        setTimeout(function(){GL.clearFilters()},300)
+        setTimeout(function(){GL.refreshSelectedLayer()},300)
       },
       pushGeoJSON:function(features){
         if(features.length>0){
@@ -124,7 +126,7 @@ Vue.component('infopanel', {
         '<div class="modal-content">'+
           '<div class="modal-header" style="margin-bottom: 0; background-color: #8BC34A;">'+
             '<h4 class="modal-title" style="color: #fff !important;">Geometrinin Bilgileri</h4>'+
-            '<a href="javascript:;" data-dismiss="modal" class="panel-close"> <ion-icon name="close-outline"></ion-icon> </a>'+
+            '<a href="javascript:;" data-dismiss="modal" @click="close" class="panel-close"> <ion-icon name="close-outline"></ion-icon> </a>'+
           '</div>'+
           '<div class="modal-body" style="padding: 0;">'+
             '<div class="accordion" id="infoPanelAcrd">'+

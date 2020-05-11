@@ -107,6 +107,7 @@ Vue.component('layerhistory', {
           a.class="tab-pane";
         });
         $("#map").show();
+        this.onoff=false;
       },
       setPage:function(pageId){
         var that = this;
@@ -303,6 +304,11 @@ Vue.component('layerhistory', {
           "darkMode":false,
           "layers":[]
         };
+      },
+      deleteLayer:function(item,i){
+        this.layers.splice(i,1);
+        this.history.splice(i,1);
+        GL.savelocalstorage("GL-LayerHistory",this.history);
       }
   },
   template:
@@ -380,7 +386,7 @@ Vue.component('layerhistory', {
                   '<li v-for="(item,i) in layers" style="padding:10px;">'+
                           '<div>{{item.name}}</div>'+
                           '<div class="custom-control custom-switch">'+
-                            '<button type="button" class="btn btn-text-primary">Sil</button>'+
+                            '<button type="button" @click="deleteLayer(item.id,i)" class="btn btn-text-primary">Sil</button>'+
                             '<input :id="item.id" @change="getActive(item.id,i)" type="checkbox" v-model="item.active" class="custom-control-input">'+
                                 '<label :for="item.id" class="custom-control-label"></label>'+
                           '</div>'+

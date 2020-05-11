@@ -164,6 +164,19 @@ Vue.component('mymenu', {
             ]
           },
           {
+            id: 'datalibrary',
+            title: GL.lang.panel.mymenu.dataLibrary,
+            icon: 'library-outline',
+            submenu:[
+              {
+                id: 'overpass',
+                title: GL.lang.panel.mymenu.overpass,
+                icon: 'color-filter-outline',
+                submenu:[]
+              },
+            ]
+          },
+          {
             id: 'tools',
             title: GL.lang.panel.mymenu.tools,
             icon: 'cog-outline',
@@ -300,6 +313,10 @@ Vue.component('mymenu', {
       e.preventDefault();
       GL.titresim();
       switch (menuid) {
+        case 'overpass':{
+          overpass.$children[0].open();
+          break
+        }
         case 'catalogCreate':{
           layerhistory.$children[0].openCatalogCreation();
           break

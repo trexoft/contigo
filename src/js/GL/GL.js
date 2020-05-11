@@ -70,11 +70,28 @@ GL.map = new mapboxgl.Map({
 });
 
 //GL.map.doubleClickZoom.disable();
-
 GL.map.on('moveend',function(res){
   var hash = window.location.hash.substr(1);
   localStorage.setItem("maphash",hash);
   GL.step.add({type:'map',url:hash});
+  // zoom, lon lat
+  var bb=hash.split("/");
+
+  var bbox = geoViewport.bounds(
+    [Number(bb[1]),
+    Number(bb[2])],
+    parseInt(bb[0],10),
+  [600, 400]);
+
+  if(GL.overpass){
+    GL.createOverpassLayer(bbox,GL.filter,GL.overpassLayerName);
+  }
+
+  if(GL.wfsQuery){
+    var url2=GL.wfsUrl+"?service=WFS&version="+GL.wfsVersion+'&srsname=EPSG:4326&request=GetFeature&bbox='+bbox[1]+","+bbox[3]+","+bbox[0]+","+bbox[2]+',EPSG:4326&typeName='+GL.wfsServicelayer+"&outputFormat=application%2Fjson";
+    GL.getWFSQuery(url2,GL.wfslayerName,GL.wfsLayerId);
+  }
+    
   //buğra
   // wfs katmanların yüklenmesi gereken bbox değerini burdan alabilirsin böylece sadece bir bbox değerine maruz kalmayız. 
 });
@@ -130,10 +147,11 @@ GL.map.on('touchend',function(e){
         });
 
         // Boş yere tıklanınca info katmanını temizle
-        if(features.length==0){
-          GL.clearFilters();
-        }
+        //if(features.length==0){
+        //  GL.clearFilters();
+        //}
 
+        /*
         // eğer tıklanan "selectLayer" katmanı içerisindeyse "sselect" seçimini kaldır
         if(features.length!=0){
           for(var k=0;k<features.length;k++){
@@ -156,7 +174,7 @@ GL.map.on('touchend',function(e){
             }
           }
         }
-        
+        */
 
         // info select ve showlayer seçimlerini listeden sil
         for(var j=0; j<features.length;j++){
@@ -164,11 +182,11 @@ GL.map.on('touchend',function(e){
             features.splice(j,1);
           }
         }
-        for(var j=0; j<features.length;j++){
-          if(features[j].source=="SelectLayer"){
-            features.splice(j,1);
-          }
-        }
+        //for(var j=0; j<features.length;j++){
+        //  if(features[j].source=="SelectLayer"){
+        //    features.splice(j,1);
+        //  }
+        //}
         for(var j=0; j<features.length;j++){
           if(features[j].source=="ShowLayer"){
             features.splice(j,1);
@@ -190,24 +208,25 @@ GL.map.on('touchend',function(e){
             }
           }
         }
-
         // source içerisinde SelecteddIndex te eğer değer varsa onları listeye ekler.
         if(features.length!=0){
           for (var f=0;f<sources.length;f++){
             var sourcee=GL.layerbox.getSource(features[f].source);
-            if(sourcee.selectedIndex.length>0){
-              for(var k=0;k<sourcee.selectedIndex.length;k++){
-                var val=sourcee.selectedIndex[k];
-                var a=sourcee.geojson.features.findIndex(x => x.properties.index==sourcee.selectedIndex[k]);
-                var ind=sourcee.geojson.features[a].properties.geotype;
-                if(ind=="Point"){
-                  circleIndexes.push(val);
-                }
-                if(ind=="LineString"){
-                  lineIndexes.push(val);
-                }
-                if(ind=="Polygon"){
-                  fillIndexes.push(val);
+            if(sourcee.id!="SelectLayer"){
+              if(sourcee.selectedIndex.length>0){
+                for(var k=0;k<sourcee.selectedIndex.length;k++){
+                  var val=sourcee.selectedIndex[k];
+                  var a=sourcee.geojson.features.findIndex(x => x.properties.index==sourcee.selectedIndex[k]);
+                  var ind=sourcee.geojson.features[a].properties.geotype;
+                  if(ind=="Point"){
+                    circleIndexes.push(val);
+                  }
+                  if(ind=="LineString"){
+                    lineIndexes.push(val);
+                  }
+                  if(ind=="Polygon"){
+                    fillIndexes.push(val);
+                  }
                 }
               }
             }
@@ -282,10 +301,187 @@ GL.map.on('touchend',function(e){
           s.geojson=geojson;
           GL.map.getSource("InfoLayer").setData(s.geojson);
         }
-        
         infopanels.$children[0].pushGeoJSON(features);
       }
     }
+  }else if((fark>500 && fark<2000) && (center1.lng==center2.lng && center1.lat==center2.lat)){
+
+    var alllayers = GL.layerbox.layers;
+    var layers = [];
+    alllayers.map(function(layer){
+    layers.push(layer.id);
+    });
+    var features = GL.map.queryRenderedFeatures(e.point, {
+      layers: layers
+    });
+
+    // eğer tıklanan "selectLayer" katmanı içerisindeyse "sselect" seçimini kaldır
+    if(features.length!=0){
+      for(var k=0;k<features.length;k++){
+        var selectedSource=GL.layerbox.getSource(features[k].source);
+        if(selectedSource.id=="SelectLayer"){
+          for(var i=0;i<selectedSource.geojson.features.length;i++){
+            var sourceIndex=GL.layerbox.getSource(selectedSource.geojson.features[i].source);
+            if(sourceIndex.selectedIndex.indexOf(selectedSource.geojson.features[i].properties.index)!=-1 && features[k].properties.index==selectedSource.geojson.features[i].properties.index){
+              sourceIndex.selectedIndex.splice(sourceIndex.selectedIndex.indexOf(selectedSource.geojson.features[i].properties.index),1);
+              var selectedSource2=GL.layerbox.getSource("SelectLayer");
+              for(var j=0;j<selectedSource2.geojson.features.length;j++){
+                if(selectedSource2.geojson.features[j].properties.index==selectedSource.geojson.features[i].properties.index){
+                  selectedSource2.geojson.features.splice(j,1);
+                  GL.map.getSource("SelectLayer").setData(selectedSource2.geojson);
+                  GL.clearFilters();
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+
+    // info select ve showlayer seçimlerini listeden sil
+    for(var j=0; j<features.length;j++){
+      if(features[j].source=="InfoLayer"){
+        features.splice(j,1);
+      }
+    }
+    for(var j=0; j<features.length;j++){
+      if(features[j].source=="SelectLayer"){
+        features.splice(j,1);
+      }
+    }
+    for(var j=0; j<features.length;j++){
+      if(features[j].source=="ShowLayer"){
+        features.splice(j,1);
+      }
+    }
+
+    if(features.length!=0){
+
+      // Seçim indekslerini buraya at
+      var fillIndexes=[]; // polygon
+      var lineIndexes=[]; //line
+      var circleIndexes=[]; //point
+
+      // Seçilen featureların source bilgisini al
+      var sources=[];
+      if(features.length!=0){
+        for(var i=0; i<features.length;i++){
+          var newSource=features[i].source;
+          if(sources.indexOf(newSource)==-1){
+            sources.push(newSource);
+          }
+        }
+      }
+
+      // source içerisinde SelecteddIndex te eğer değer varsa onları listeye ekler.
+      if(features.length!=0){
+        for (var f=0;f<sources.length;f++){
+          var sourcee=GL.layerbox.getSource(features[f].source);
+          if(sourcee.selectedIndex.length>0){
+            for(var k=0;k<sourcee.selectedIndex.length;k++){
+              var val=sourcee.selectedIndex[k];
+              var a=sourcee.geojson.features.findIndex(x => x.properties.index==sourcee.selectedIndex[k]);
+              var ind=sourcee.geojson.features[a].properties.geotype;
+              if(ind=="Point"){
+                circleIndexes.push(val);
+              }
+              if(ind=="LineString"){
+                lineIndexes.push(val);
+              }
+              if(ind=="Polygon"){
+                fillIndexes.push(val);
+              }
+            }
+          }
+        }
+      }
+
+      var s=GL.layerbox.getSource("SelectLayer");
+      for(var k=0;k<features.length;k++){
+        var selectedSource=GL.layerbox.getSource(features[k].source);
+        if(selectedSource.id==features[0].source){
+          for(var i=0;i<selectedSource.geojson.features.length;i++){
+            if(selectedSource.geojson.features[i].properties.index==features[0].properties.index){
+              s.geojson.features.push(selectedSource.geojson.features[i]);
+              selectedSource.geojson.features[i].source=features[0].source;
+              GL.map.getSource("SelectLayer").setData(s.geojson);
+
+              var index=selectedSource.geojson.features[i].properties.index;
+              var source=GL.layerbox.getSource(features[0].source);
+              source.selectedIndex.push(index);
+
+              // Clear info layer
+              var geojson={type:'FeatureCollection',features:[]};
+              GL.map.getSource("InfoLayer").setData(geojson);
+
+              // Seçilen featureları listeye aktarır.
+                var geojson={type:'FeatureCollection',features:[]};
+                features.map(function(feat){
+                  var index=feat.properties.index;
+                  var f=GL.layerbox.getSource(feat.source);
+
+                  for(var i=0; i<f.geojson.features.length;i++){
+                    if(f.geojson.features[i].properties.index==index){
+                      geojson.features.push(f.geojson.features[i]);
+                      if(f.geojson.features[i].properties.geotype=="Polygon"){
+                        fillIndexes.push(f.geojson.features[i].properties.index);
+                      }
+                      if(f.geojson.features[i].properties.geotype=="LineString" || f.geojson.features[i].properties.geotype=="MultiLineString"){
+                        lineIndexes.push(f.geojson.features[i].properties.index);
+                      }
+                      if(f.geojson.features[i].properties.geotype=="Point"){
+                        circleIndexes.push(f.geojson.features[i].properties.index);
+                      } 
+                    }
+                  }
+                })
+
+                for(var j=0;j<sources.length;j++){
+                  // Eski seçimleri tekrar görünür yapar
+                  GL.map.setFilter(sources[j]+"-polygon",
+                  ["==", ["geometry-type"], "Polygon"]);
+
+                  GL.map.setFilter(sources[j]+"-line",
+                  ["==", ["geometry-type"], "LineString"]);
+
+
+                  GL.map.setFilter(sources[j]+"-point",
+                  ["==", ["geometry-type"], "Point"]);
+                }
+                
+              
+                
+                // Yeni seçimleri filtreler
+                if(fillIndexes.length>0){
+                  for(var j=0;j<sources.length;j++){
+                    GL.map.setFilter(sources[j]+"-polygon",
+                    ["all",["==", ["geometry-type"], "Polygon"],
+                    ['!',['in', ["number","get","properties",["get","index"]],["literal", fillIndexes]]]]);
+                  }
+                }
+                
+                if(lineIndexes.length>0){
+                  for(var j=0;j<sources.length;j++){
+                    GL.map.setFilter(sources[j]+"-line",
+                    ["all",["==", ["geometry-type"], "LineString"],
+                    ['!',['in', ["number","get","properties",["get","index"]],["literal", lineIndexes]]]]);
+                  }
+                }
+                
+                if(circleIndexes>0){
+                  for(var j=0;j<sources.length;j++){
+                    GL.map.setFilter(sources[j]+"-point", 
+                    ["all",["==", ["geometry-type"], "Point"],
+                    ['!',['in', ["number","get","properties",["get","index"]],["literal", circleIndexes]]]]);
+                  }
+                }
+            }
+          }
+        }
+      }
+    }
+    
+    
   }
 });
 
@@ -844,7 +1040,10 @@ GL.createTilesUrl=function(url){
 }
 
 
-GL.addGeojsonToLayer=function(geojson,layerid,color,info){
+GL.addGeojsonToLayer=function(geojson,layerid,color,info,zoom){
+  if(zoom==undefined){
+    zoom=true;
+  }
   var props = geojson.features[0].properties;
   var propsAddStatus = props==null || props==undefined;
   if(propsAddStatus){
@@ -855,12 +1054,19 @@ GL.addGeojsonToLayer=function(geojson,layerid,color,info){
   var index = 1;
   if(indexhave){
     geojson.features.map(function(gjson){
-      var ind = gjson.properties.index;
-      gjson.properties.geotype=gjson.geometry.type;
-      ind=parseInt(ind,10);
-      if(ind>index){
-        index=ind;
+      if(typeof gjson.properties.index=="string"){
+        gjson.properties.index=Number(gjson.properties.index);
       }
+
+      if(gjson.geometry!=null){
+        var ind = gjson.properties.index;
+        gjson.properties.geotype=gjson.geometry.type;
+        ind=parseInt(ind,10);
+        if(ind>index){
+          index=ind;
+        }
+      }
+      
     });
     fields.map(function(field){
       if(field.name=='index'){
@@ -877,9 +1083,11 @@ GL.addGeojsonToLayer=function(geojson,layerid,color,info){
       if(propsAddStatus){
         gjson.properties={};
       }
-      gjson.properties.geotype=gjson.geometry.type;
-      gjson.properties.index = index;
-      index++;
+      if(gjson.geometry!=null){
+        gjson.properties.geotype=gjson.geometry.type;
+        gjson.properties.index = index;
+        index++;
+      }
     });
     fields.push({name:'index',type:'integer',unique:true,auto:true,protecth:true});
     fields.push({name:'geotype',type:'string',protecth:true});
@@ -946,9 +1154,10 @@ GL.addGeojsonToLayer=function(geojson,layerid,color,info){
     GL.layerbox.layers.push(infLayer2);
     GL.layerbox.layers.push(infLayer3);
 
-    var bbox = turf.bbox(geojson);
-    GL.zoomToBbox(bbox);
-
+    if(zoom){
+      var bbox = turf.bbox(geojson);
+      GL.zoomToBbox(bbox);
+    }
   },100)
 
   //GL.loading(false);
@@ -1828,7 +2037,7 @@ GL.createVectorLayer=function(data){
 
 }
 
-GL.addWMSLayer=function(url,layerid,layername){
+GL.addWMSLayer=function(url,layerid,layername,serviceLayer,version,selectedType,url2){
 
   GL.map.addSource(layerid, {
     'type': 'raster',
@@ -1847,6 +2056,8 @@ GL.addWMSLayer=function(url,layerid,layername){
       'paint': {}
       }
   );
+
+  GL.createLayerHistory2("createWMS",layerid,layername,url2,serviceLayer,"wms",version,selectedType,0.8,0,22);
 
   var infLayer1={id:layerid+"-raster",source:layerid,type:inf.type,features:"",color:""};
   GL.layerbox.layers.push(infLayer1);
@@ -1867,6 +2078,8 @@ GL.addXYZLayer=function(layerid,url,layername,min,max){
 
   var inf={id:layerid,name:layername,geotype:'xyz',layers:[layerid+"-raster"],geojson:'',catalogInfo:layer}
   GL.layerbox.sources.push(inf);
+
+  GL.createLayerHistory2("createXYZ",layerid,layername,url,"","wms","","",1,min,max);
 
   GL.map.addLayer({
         'id': layerid+'-raster',
@@ -1903,7 +2116,7 @@ GL.removeRasterLayerByID=function(layerID){
   }
 }
 
-GL.addWMTSLayer=function(url,layerid,layername){
+GL.addWMTSLayer=function(url,layerid,layername,selectedType){
   //https://sampleserver6.arcgisonline.com/arcgis/rest/services/WorldTimeZones/MapServer/WMTS/tile/1.0.0/WorldTimeZones/default/default028mm/{z}/{y}/{x}.png
   GL.map.addSource(layerid, {
     'type': 'raster',
@@ -1913,6 +2126,8 @@ GL.addWMTSLayer=function(url,layerid,layername){
 
   var inf={id:layerid,name:layername,geotype:'wmts',layers:[layerid+"-raster"],geojson:''}
   GL.layerbox.sources.push(inf);
+
+  GL.createLayerHistory2("createWMTS",layerid,layername,url,"","wmts","",selectedType,1,0,22);
 
   GL.map.addLayer(
       {
@@ -1939,6 +2154,16 @@ GL.addMVTLayer=function(layerid,url,sourcelayer,layername,minzoom,maxzoom){
 
     var inf={id:layerid,fields:[],name:layername,geotype:'mvt',layers:[layerid+"-point",layerid+"-line",layerid+"-polygon"],geojson:'',lastIndex:0};
     GL.layerbox.sources.push(inf);
+
+    style={
+      "status": true,
+      "type": "color",
+      "color": {
+        "color": "#35af6d"
+      }
+    }
+
+    GL.createLayerHistory("createMVT",layerid,layername,url,sourcelayer,"mvt",0.7,minzoom,maxzoom,style);
 
     GL.map.addLayer(
         {
@@ -2014,6 +2239,16 @@ GL.addPBFLayer=function(layerid,url,sourcelayer,layername,minzoom,maxzoom){
 
     var inf={id:layerid,fields:[],name:layername,geotype:'pbf',layers:[layerid+"-point",layerid+"-line",layerid+"-polygon"],geojson:'',lastIndex:0};
     GL.layerbox.sources.push(inf);
+
+    style={
+      "status": true,
+      "type": "color",
+      "color": {
+        "color": "#35af6d"
+      }
+    }
+
+    GL.createLayerHistory("createPBF",layerid,layername,url,sourcelayer,"pbf",0.7,minzoom,maxzoom,style);
 
     GL.map.addLayer(
         {
@@ -2206,7 +2441,6 @@ GL.uploadCatalog=function(){
 
 
 GL.creteCatalogLayer=function(settings,sets){
-  debugger;
   if(sets!=undefined){
     var darkmode = sets.darkmode || false;
     var center=sets.center || false;
@@ -2329,8 +2563,6 @@ GL.creteCatalogLayer=function(settings,sets){
   
             var color=GL.style.style(inf.style);
   
-            console.log(color);
-  
             GL.map.addLayer({
               'id': inf.id+'-point',
               'type': 'circle',
@@ -2398,7 +2630,6 @@ GL.creteCatalogLayer=function(settings,sets){
             if (typeof features == 'string') {
               features = JSON.parse(features);
             }
-
             GL.map.addSource(settings.id, {'type': 'geojson', 'data':features});
 
             GL.addLayerHistory(settings);
@@ -2459,7 +2690,6 @@ GL.creteCatalogLayer=function(settings,sets){
               parser = new DOMParser();
               data = parser.parseFromString(data,"text/xml");
             };
-            console.log(data);
             var reader = new ol.format.GPX();
             var featureArray = reader.readFeatures(data, {
               "featureProjection": 'EPSG:4326',
@@ -2472,7 +2702,6 @@ GL.creteCatalogLayer=function(settings,sets){
             if (typeof features == 'string') {
               features = JSON.parse(features);
             }
-
             GL.map.addSource(settings.id, {'type': 'geojson', 'data':features});
 
             GL.addLayerHistory(settings);
@@ -2542,7 +2771,6 @@ GL.creteCatalogLayer=function(settings,sets){
             fileReader.addEventListener("load", function (e) {
               var d=fileReader.result;
               shp(d).then(function (geojson) {
-                 console.log(geojson);
                  if(typeof geojson=="string"){
                   geojson=JSON.parse(geojson);
                   };
@@ -2566,8 +2794,6 @@ GL.creteCatalogLayer=function(settings,sets){
                 GL.layerbox.sources.push(inf);
       
                 var color=GL.style.style(inf.style);
-      
-                console.log(color);
 
                 GL.map.addLayer({
                   'id': inf.id+'-point',
@@ -2834,6 +3060,20 @@ GL.creteCatalogLayer=function(settings,sets){
     case 'createWFS':
       var url2=settings.url+"?service=WFS&version="+settings.version+"&srsname=EPSG:4326&request=GetFeature&typeName="+settings.typename+"&outputFormat=application%2Fjson";
       GL.loading("WFS Yükleniyor");
+
+      GL.wfsQuery=true;
+      GL.wfsServicelayer=settings.typename;
+      GL.wfsUrl=settings.url;
+      GL.wfsVersion=settings.version;
+      GL.wfslayerName=settings.name;
+      GL.wfsLayerId=settings.id;
+
+      GL.getWFSQuery(url2,settings.name,settings.id);
+      layerhistory.$children[0].close();
+      addwfs.$children[0].open();
+      addwfs.$children[0].setPage("tab1");
+
+      /*
       $.get(url2,function(data, status){
           GL.loading(false);
           if(status=="success"){
@@ -2849,7 +3089,6 @@ GL.creteCatalogLayer=function(settings,sets){
               
             var geojson2 = reader.writeFeatures(features);
             var r=JSON.parse(geojson2);
-            console.log(r);
             GL.map.addSource(settings.id, {'type': 'geojson', 'data':r});
 
             GL.addLayerHistory(settings);
@@ -2904,11 +3143,11 @@ GL.creteCatalogLayer=function(settings,sets){
           }
           
         });
+      */
 
     break
     case 'createWMS':
       var url= settings.url+'?service=WMS&version='+settings.version+'&request=GetMap&layers='+settings.typename+'&styles=&bbox={bbox-epsg-3857}&transparent=true&width=256&height=256&srs=EPSG:3857&format='+settings.selectedType;
-      console.log(url);
       GL.map.addSource(settings.id, {
         'type': 'raster',
         'tiles': [url],
@@ -3501,4 +3740,341 @@ GL.clearFilters=function(){
       }
     }
   }
+}
+
+GL.refreshSelectedLayer=function(){
+  var data=GL.layerbox.getSource("SelectLayer");
+  GL.map.setFilter(data.id+"-polygon",
+    ["==", ["geometry-type"], "Polygon"]);
+
+  GL.map.setFilter(data.id+"-line",
+    ["==", ["geometry-type"], "LineString"]);
+
+  GL.map.setFilter(data.id+"-point",
+    ["==", ["geometry-type"], "Point"]);
+}
+
+GL.overpass=false;
+GL.filter=null;
+GL.overpassLayerName="";
+GL.createOverpassLayer=function(bbox,filters,layerName){
+  var client = new XMLHttpRequest();
+  
+  client.open('POST', 'https://overpass-api.de/api/interpreter');
+  client.addEventListener('load', function() {
+    if(client.status==200){
+      // If overpass layer is exist, delete it
+      var source=GL.layerbox.getSource("overpass");
+      if(source){
+        GL.removeLayerByID("overpass");
+      }
+
+      var features = new ol.format.OSMXML().readFeatures(client.responseText, {
+        featureProjection: "EPSG:4326"
+      });
+
+      var reader = new ol.format.GeoJSON();
+
+      var color=GL.config.colors[10];
+      var information={id:"overpass",name:layerName,type:'collection',layers:["overpass-point","overpass-line","overpass-polygon"]};
+      var geojson = reader.writeFeatures(features, {});
+      if(typeof geojson=="string"){
+        geojson=JSON.parse(geojson)
+      }
+
+      if(geojson.features.length!=0){
+        GL.addGeojsonToLayer(geojson,"overpass",color,information,false);
+      }
+    }else{
+      GL.uyari("Veriler Alınamadı.");
+    }
+  });
+
+  var queryLast=GL.overpassQuery(filters,bbox);
+
+  client.send(queryLast);
+}
+
+GL.overpassQuery=function(filter,bbox){
+  var lastQuery="";
+  for(var i=0;i<filter.length;i++){
+    var query='(node['+filter[i]+'](' +
+      bbox[0] + ',' + bbox[1] + ',' +
+      bbox[2] + ',' + bbox[3] +
+      ');way['+filter[i]+'](' +
+      bbox[0] + ',' + bbox[1] + ',' +
+      bbox[2] + ',' + bbox[3] +
+    '););out body;>;out skel qt;';
+    lastQuery=lastQuery+query;
+  }
+  
+  return lastQuery
+}
+
+// creates empty layer
+GL.createLayer=function(layerid,color,name){
+  var geojson={type:'FeatureCollection',features:[]};
+  GL.map.addSource(layerid, { 'type': 'geojson', 'data': geojson });
+
+  var inf={id:layerid,name:name,geotype:"collection",layers:[layerid+"-point",layerid+"-line",layerid+"-polygon"],geojson:geojson,status:false}
+  GL.layerbox.sources.push(inf);
+
+  GL.map.addLayer({
+      'id': layerid+'-point',
+      'type': 'circle',
+      'source': layerid,
+          'paint': {
+              'circle-radius': 4,
+              'circle-color': color
+          },
+          'filter': ['==', '$type', 'Point']
+  });
+  GL.map.addLayer({
+      'id': layerid+'-polygon',
+      'type': 'fill',
+      'source': layerid,
+          'paint': {
+              'fill-color': color,
+              'fill-opacity': 0.7
+          },
+          'filter': ['==', '$type', 'Polygon']
+  });
+  GL.map.addLayer({
+      'id': layerid+'-line',
+      'type': 'line',
+      'source': layerid,
+          'paint': {
+              'line-color': color,
+              'line-width': 2,
+              'line-dasharray':[2,2]
+          },
+          'filter': ['==', '$type', 'LineString']
+  });
+  
+  setTimeout(function(){
+    var features=GL.layerbox.getLayerFeature(layerid,layerid+'-point');
+    var features2=GL.layerbox.getLayerFeature(layerid,layerid+'-line');
+    var features3=GL.layerbox.getLayerFeature(layerid,layerid+'-polygon');
+
+    var infLayer1={id:layerid+"-point",source:layerid,type:"collection",features:features,color:color};
+    var infLayer2={id:layerid+"-line",source:layerid,type:"collection",features:features2,color:color};
+    var infLayer3={id:layerid+"-polygon",source:layerid,type:"collection",features:features3,color:color};
+    GL.layerbox.layers.push(infLayer1);
+    GL.layerbox.layers.push(infLayer2);
+    GL.layerbox.layers.push(infLayer3);
+
+  },100)
+}
+
+
+GL.createLayerHistory=function(method,id,name,url,typeName,geoType,opacity,minZoom,maxZoom,style){
+  if(method=="createMVT" || method=="createPBF"){
+    var layer={
+      "method":method,
+      "id":id,
+      "name":name,
+      "url":url,
+    "typename":typeName,
+      "srsname":"EPSG:4326",
+    "geotype":geoType,
+    "opacity":opacity,
+    "minZoom":minZoom,
+    "maxZoom":maxZoom,
+    "style":style,
+    "labeling":{
+        "status":true,
+        "labels":{
+          "point":{
+            "type":"expressions",
+            "text-field":["get", "geotype"],
+            "symbol-placement":"point"
+          },
+          "line":{
+            "type":"column",
+            "text-field":"geotype",
+            "symbol-placement":"line"
+          },
+          "polygon":{
+            "type":"multiColumn",
+            "text-field":"{index} : {geotype}",
+            "symbol-placement":"line"
+          }
+        },
+        "style":{
+          "text-color":"#485E69",
+          "text-font":["DIN Offc Pro Medium", "Arial Unicode MS Bold"],
+          "text-size":10,
+          "text-justify":"right",
+          "text-anchor":"bottom",
+          "text-offset":[0,0.1]
+        }
+      },
+      "selectedIndex":[],
+      "autoLoad":true,
+      "checked":true
+    }
+  }
+  
+  GL.addLayerHistory(layer);
+}
+
+GL.createLayerHistory2=function(method,id,name,url,typename,geotype,version,selectedtype,opacity,minzoom,maxzoom){
+  if(method=="createWMS"){
+    var layer={
+      "method":method,
+      "id":id,
+      "name":name,
+      "url":url,
+      "typename":typename,
+      "srsname":"EPSG:4326",
+      "geotype":geotype,
+      "version":version,
+      "selectedType":selectedtype,
+      "opacity":opacity,
+      "minZoom":minzoom,
+      "maxZoom":maxzoom,
+      "selectedIndex":[],
+      "autoLoad":true,
+      "checked":true
+    }
+  }else if(method=="createWMTS"){
+    var layer={
+      "method":method,
+      "id":id,
+      "name":name,
+      "url":url,
+      "srsname":"EPSG:4326",
+      "geotype":geotype,
+      "selectedType":selectedtype,
+      "opacity":opacity,
+      "minZoom":minzoom,
+      "maxZoom":maxzoom,
+      "selectedIndex":[],
+      "autoLoad":true,
+      "checked":true
+    }
+  }else if(method=="createXYZ"){
+    var layer={
+      "method":method,
+      "id":id,
+      "name":name,
+      "url":[url],
+      "srsname":"EPSG:4326",
+      "geotype":geotype,
+      "opacity":opacity,
+      "minZoom":minzoom,
+      "maxZoom":maxzoom,
+      "labeling":{
+        "status":true,
+        "labels":{
+          "point":{
+            "type":"expressions",
+            "text-field":["get", "geotype"],
+            "symbol-placement":"point"
+          },
+          "line":{
+            "type":"column",
+            "text-field":"geotype",
+            "symbol-placement":"line"
+          },
+          "polygon":{
+            "type":"multiColumn",
+            "text-field":"{index} : {geotype}",
+            "symbol-placement":"line"
+          }
+        },
+        "style":{
+          "text-color":"#485E69",
+          "text-font":["DIN Offc Pro Medium", "Arial Unicode MS Bold"],
+          "text-size":10,
+          "text-justify":"right",
+          "text-anchor":"bottom",
+          "text-offset":[0,0.1]
+        }
+      },
+      "selectedIndex":[],
+      "autoLoad":true,
+      "checked":true
+    }
+  }
+  
+  GL.addLayerHistory(layer);
+}
+
+GL.createLayerHistory3=function(method,id,name,url,typename,geotype,version,style){
+    var layer={
+      "method":method,
+      "id":id,
+      "name":name,
+      "url":url,
+      "typename":typename,
+      "srsname":"EPSG:4326",
+	    "geotype":geotype,
+      "version":version,
+      "style":style,
+	  "labeling":{
+        "status":true,
+        "labels":{
+          "point":{
+            "type":"expressions",
+            "text-field":["get", "geotype"],
+            "symbol-placement":"point"
+          },
+          "line":{
+            "type":"column",
+            "text-field":"geotype",
+            "symbol-placement":"line"
+          },
+          "polygon":{
+            "type":"multiColumn",
+            "text-field":"{index} : {geotype}",
+            "symbol-placement":"line"
+          }
+        },
+        "style":{
+          "text-color":"#485E69",
+          "text-font":["DIN Offc Pro Medium", "Arial Unicode MS Bold"],
+          "text-size":10,
+          "text-justify":"right",
+          "text-anchor":"bottom",
+          "text-offset":[0,0.1]
+        }
+      },
+	  "indexColumn":"index",
+      "lastIndex":1,
+      "fields":[
+        {"name":"index","type":"integer","unique":true,"auto":true,"default":true,"list":[],"protecth":true},
+        {"name":"geotype","type":"string","protecth":true}
+      ],
+      "selectedIndex":[],
+      "autoLoad":true,
+      "checked":true
+    }
+    console.log(layer);
+    GL.addLayerHistory(layer);
+}
+
+GL.wfsQuery=false;
+GL.wfsUrl="";
+GL.wfslayerName="";
+GL.wfsVersion="";
+GL.wfsServicelayer="";
+GL.wfsLayerId="";
+
+GL.getWFSQuery=function(url,layerName,id){
+  $.get(url,function(data, status){
+    GL.loading(false);
+    if(data.features.length!=0){
+      // If wfslayer layer is exist, delete it
+      var source=GL.layerbox.getSource(GL.wfsLayerId);
+      if(source){
+        GL.removeLayerByID(GL.wfsLayerId);
+      }
+
+      var color=GL.config.colors[10];
+      var information={id:id,name:layerName,type:'wfs',layers:[id+"-point",id+"-line",id+"-polygon"]};
+    
+      GL.addGeojsonToLayer(data,id,color,information,false);
+    }
+  });
 }
