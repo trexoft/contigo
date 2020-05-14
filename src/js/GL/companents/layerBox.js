@@ -67,7 +67,6 @@ Vue.component('layerbox', {
         return result
       },
     options:function(obj){
-      console.log(obj);
       GL.titresim();
       var that=this;
       if(obj.geotype=="wms" || obj.geotype=="xyz" || obj.geotype=="wmts"){
@@ -134,17 +133,81 @@ Vue.component('layerbox', {
           ]
         });   
 
+      }else if(obj.geotype=="wfs" || obj.geotype=="wfst"){
+        actionsheet.$children[0].open({
+          header:'Seçenekler - '+obj.name,
+          buttons:[
+            {id:'table',title:'Öznitelik Tablosunu Aç',callback:function(a){
+                that.closee();
+                datatable.$children[0].open(obj.id);
+            }},
+            {id:'newdraw',title:'Yeni Çizim Yap',callback:function(a){
+              that.closee();
+              drawvector.$children[0].open(obj.id);
+            }},
+            {id:'showonmap',title:'Haritada Göster',callback:function(a){
+              //get features
+              var source=GL.layerbox.getSource(obj.id);
+              var bbox = turf.bbox(source.geojson);
+
+              that.closee();
+              GL.zoomToBbox(bbox);
+            }},
+            {id:'changecolor',title:'Renk Değiştir',callback:function(a){
+              GL.renkAl(function(color){
+                that.closee();
+                GL.changeLayerColor(obj,color);
+              });
+            }},{id:'sendChanges',title:'Değişiklikleri Gönder',callback:function(a){
+              var source=GL.layerbox.getSource(obj.id);
+              if(GL.deletedFeatures.length>0){
+                GL.wfst.send("delete",GL.deletedFeatures,obj.id);
+                GL.deletedFeatures=[];
+              }
+              if(GL.addedFeatures.length>0){
+                GL.wfst.send("insert",GL.addedFeatures,obj.id);
+                GL.addedFeatures=[];
+              }
+              if(GL.editedFeatures.length>0){
+                GL.wfst.send("update",GL.editedFeatures,obj.id);
+                GL.editedFeatures=[];
+              }
+              that.closee();
+            }},
+            {id:'download',title:'İndir',callback:function(a){
+              that.closee();
+              layerdownload.$children[0].open(obj);
+            }},
+            {id:'share',title:'Paylaş',callback:function(a){
+              console.log(a);
+            }},
+            {id:'save',title:'Sisteme Kayıt Et',callback:function(a){
+              console.log(a);
+            }},
+            {id:'delete',title:'Katmanı Sil',callback:function(a){
+              actionsheet.$children[0].close(a.action,false);
+              that.closee();
+              mydialog.$children[0].open({
+                header:'Katman Silme',
+                content:obj.name+' katmanını silmek istediğinizden emin misiniz?',
+                buttons:[
+                  {id:'evet',title:'Evet',callback:function(a){
+                    GL.removeLayerByID(obj.id);
+                  }}
+                ]
+              });   
+            }}
+          ]
+        });    
       }else{
         actionsheet.$children[0].open({
           header:'Seçenekler - '+obj.name,
           buttons:[
             {id:'table',title:'Öznitelik Tablosunu Aç',callback:function(a){
-                console.log(a);
                 that.closee();
                 datatable.$children[0].open(obj.id);
             }},
             {id:'newdraw',title:'Yeni Çizim Yap',callback:function(a){
-              console.log(a);
               that.closee();
               drawvector.$children[0].open(obj.id);
             }},

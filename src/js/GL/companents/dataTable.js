@@ -14,19 +14,43 @@ Vue.component('datatable', {
                      {i:1,id:'tab2',title:'Tablo',active:false,class:"tab-pane"},
                      {i:2,id:'tab3',title:'İşlemler',active:false,class:"tab-pane"}],
               table:{},
+              source:""
           }
       },
       open:function(sourceId){
         var that = this;
         this.onoff = true;
         this.setPage('tab2');
+        this.source=sourceId;
         var source=GL.layerbox.getSource(sourceId);
         this.header = source.name+' Katmanı Veri Tablosu';
         var geojson = source.geojson;
         debugger;
         var columns = GL.datatable.readyColumns(source.fields);
         var data = GL.datatable.getData(geojson,source.fields);
-        
+        var printIcon = function printIcon(cell, formatterParams) {
+          return "<span><ion-icon name='settings-outline'></ion-icon></span>";
+        };
+        columns.unshift({
+          formatter: printIcon,
+          headerSort: false,
+          width: 40,
+          align: "center",
+          cellClick: function cellClick(e, row) {
+            GL.titresim();
+            var data = row.getData();
+            var source=GL.layerbox.getSource(that.source);
+            //var data2={};
+            for(var i=0;i<source.geojson.features.length;i++){
+              if(data.index==source.geojson.features[i].properties.index){
+                var data2={layerName:source.name,type:"Feature",geometry:source.geojson.features[i].geometry, properties:source.geojson.features[i].properties, source:that.source};
+                //infopanel.$children[0].settings(data2);
+                that.settings(data2);
+                break
+              }
+            }
+          }
+        });
         setTimeout(function(){
           that.table = new Tabulator("#datatableView1", {
             layout:"fitData",
@@ -122,15 +146,114 @@ Vue.component('datatable', {
       doIt:function(tabId){
         switch(tabId){
           case 'tab1':{
+            $("#map").show();
             break;
           }
           case 'tab2':{
+            $("#map").hide();
             break;
           }
           case 'tab3':{
+            $("#map").hide();
             break;
           }
         }
+      },
+      settings:function(item){
+        $("#infoPanel").modal('hide');
+        this.setPage("tab1");
+        mydialog.$children[0].open({
+          header:'Seçenekler',
+          content:'Bu geometriye hangi işlemi yapmak istersiniz?',
+          buttons:[
+            {id:'showonmap',title:'Haritada Göster',callback:function(a){
+              // zoom to feature
+              var geojson={type:'FeatureCollection',features:[]};
+              GL.map.getSource("ShowLayer").setData(item);
+              GL.zoomFeature(item);
+              setTimeout(function(){
+                GL.map.getSource("ShowLayer").setData(geojson);
+              },3000)
+            }},
+            {id:'select',title:'Geometriyi Seç',callback:function(a){
+              var s=GL.layerbox.getSource("SelectLayer");
+              s.geojson.features.push(item);
+              GL.map.getSource("SelectLayer").setData(s.geojson);
+              var geojson={type:'FeatureCollection',features:[]};
+              GL.map.getSource("InfoLayer").setData(geojson);
+              var index=item.properties.index;
+
+              var source=GL.layerbox.getSource(item.source);
+              source.selectedIndex.push(index);
+              GL.clearFilters();
+            }},
+            {id:'edit',title:'Geometriyi Düzenle',callback:function(a){
+              GL.hideEditingFeature(item);
+            }},
+            {id:'download',title:'Geometriyi İndir',callback:function(a){
+              var geojson={type:'FeatureCollection',features:[]};
+              var index=item.properties.index;
+              var source=GL.layerbox.getSource(item.source);
+              var features=source.geojson.features;
+              for (var i=0; i<features.length; i++){
+                if(features[i].properties.index==index){
+                  geojson.features.push(features[i]);
+                  break
+                }
+              }
+              var reader = new ol.format.GeoJSON();
+              var features=reader.readFeatures(geojson);
+        
+              var geojson2 = reader.writeFeatures(features, {});
+              download(geojson2, item.layerName+"-feature"+ ".geojson", "text/plain");
+              GL.bilgi("Geometri indirildi");
+            }},
+            {id:'delete',title:'Geometriyi Sil',callback:function(a){
+              mydialog.$children[0].close(a.modal,false);
+
+              setTimeout(function() {
+                mydialog.$children[0].open({
+                  header:'Katman Silme',
+                  content:'Geometriyi silmek istediğinizden emin misiniz?',
+                  buttons:[
+                    {id:'evet',title:'Evet',callback:function(a){
+                      var index=item.properties.index;
+                      var source=GL.layerbox.getSource(item.source);
+
+                      if(item.source.slice(0,4)=='wfst' || item.source.slice(0,3)=='wfs'){
+                          for(var j=0;j<source.geojson.features.length;j++){
+                            if(source.geojson.features[j].properties.index==item.properties.index){
+                              GL.deletedFeatures.push(source.geojson.features[j]);
+                              break
+                            }
+                          }
+                      }
+
+                      var features=source.geojson.features;
+                      for (var i=0; i<features.length; i++){
+                        if(features[i].properties.index==index){
+                          features.splice(i,1);
+                          break
+                        }
+                      }
+                      GL.map.getSource(item.source).setData(source.geojson);
+                      GL.bilgi("Geometri silindi");
+                      GL.clearFilters();
+                    }}
+                  ]
+                });   
+              }, 400);
+              
+            }}
+          ],
+          callback:function(a){
+            if(a.type=="close"){
+              GL.bilgi("İşlem İptal Edildi");
+              setTimeout(function(){GL.clearFilters()},300)
+              setTimeout(function(){GL.refreshSelectedLayer()},300)
+            }
+          }
+        });   
       }
   },
   template:
@@ -161,18 +284,6 @@ Vue.component('datatable', {
           '<div id="appCapsule" class="extra-header-active" style="padding-top: 50px !important;">'+
 
             '<div class="tab-content mt-1">'+
-
-            // tab1
-            '<div :class="pages[0].class">'+
-            '<div class="section full mt-1">'+
-                '<div class="section-title">Tab 1</div>'+
-                '<div class="wide-block">'+
-
-                  'tab1'+
-
-                '</div>'+
-            '</div>'+
-            '</div>'+
 
             // tab2
             '<div :class="pages[1].class">'+

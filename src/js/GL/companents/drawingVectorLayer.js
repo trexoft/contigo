@@ -352,7 +352,7 @@ Vue.component('drawvector', {
                 that.fields=[];
                 that.setPage('tab3');
                 GL.bilgi("Kayıt Edildi");
-              },10);
+              },30);
               
             },10);
           }
@@ -370,6 +370,7 @@ Vue.component('drawvector', {
           }
           this.drawngeojson.properties=d;
           this.geojson.features.push(this.drawngeojson);
+          GL.addedFeatures.push(this.drawngeojson);
           GL.map.getSource(this.layer.id).setData(this.geojson);
   
           var fields = GL.datatable.getFields(this.layer.id);

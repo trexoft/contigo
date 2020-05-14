@@ -12,6 +12,23 @@ Vue.component('infopanel', {
       open:function(){
         this.onoff = true;
         $("#infoPanel").modal('show');
+        var data = GL.draw.draw.getAll();
+        // stops editing if exists
+        if(data.features.length>0){
+          var layer=GL.layerbox.getSource(GL.editingLayer);
+          if(layer.geotype=="wfst" || layer.geotype=="wfs"){GL.editedFeatures.push(data.features[0])};
+
+          for(var i=0;i<layer.geojson.features.length;i++){
+            if(data.features[0].properties.index==layer.geojson.features[i].properties.index){
+              layer.geojson.features[i]=data.features[0];
+              GL.map.getSource(GL.editingLayer).setData(layer.geojson);
+              GL.editingLayer="";
+              GL.clearFilters();
+              GL.draw.deleteAll();
+            }
+          }
+          
+        }
       },
       close:function(e){
         //this.onoff = false;
@@ -44,6 +61,7 @@ Vue.component('infopanel', {
       },
       settings:function(item){
         $("#infoPanel").modal('hide');
+        console.log(item);
         mydialog.$children[0].open({
           header:'Seçenekler',
           content:'Bu geometriye hangi işlemi yapmak istersiniz?',
@@ -58,20 +76,20 @@ Vue.component('infopanel', {
               },3000)
             }},
             {id:'select',title:'Geometriyi Seç',callback:function(a){
-              console.log(item);
               var s=GL.layerbox.getSource("SelectLayer");
               s.geojson.features.push(item);
               GL.map.getSource("SelectLayer").setData(s.geojson);
               var geojson={type:'FeatureCollection',features:[]};
               GL.map.getSource("InfoLayer").setData(geojson);
-              console.log(s.geojson);
               var index=item.properties.index;
 
               var source=GL.layerbox.getSource(item.source);
               source.selectedIndex.push(index);
             }},
+            {id:'edit',title:'Geometriyi Düzenle',callback:function(a){
+              GL.hideEditingFeature(item);
+            }},
             {id:'download',title:'Geometriyi İndir',callback:function(a){
-              console.log(item);
               var geojson={type:'FeatureCollection',features:[]};
               var index=item.properties.index;
               var source=GL.layerbox.getSource(item.source);
@@ -100,6 +118,16 @@ Vue.component('infopanel', {
                     {id:'evet',title:'Evet',callback:function(a){
                       var index=item.properties.index;
                       var source=GL.layerbox.getSource(item.source);
+
+                      if(item.source.slice(0,4)=='wfst' || item.source.slice(0,3)=='wfs'){
+                          for(var j=0;j<source.geojson.features.length;j++){
+                            if(source.geojson.features[j].properties.index==item.properties.index){
+                              GL.deletedFeatures.push(source.geojson.features[j]);
+                              break
+                            }
+                          }
+                      }
+
                       var features=source.geojson.features;
                       for (var i=0; i<features.length; i++){
                         if(features[i].properties.index==index){
@@ -109,13 +137,21 @@ Vue.component('infopanel', {
                       }
                       GL.map.getSource(item.source).setData(source.geojson);
                       GL.bilgi("Geometri silindi");
+                      GL.clearFilters();
                     }}
                   ]
                 });   
               }, 400);
               
             }}
-          ]
+          ],
+          callback:function(a){
+            if(a.type=="close"){
+              GL.bilgi("İşlem İptal Edildi");
+              setTimeout(function(){GL.clearFilters()},300)
+              setTimeout(function(){GL.refreshSelectedLayer()},300)
+            }
+          }
         });   
       }
   },

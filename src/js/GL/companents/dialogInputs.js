@@ -5,10 +5,13 @@ Vue.component('mydialoginputs', {
   methods:{
       setDefault:function(){
           return {
-              modals:[]
+              modals:[],
+              geocoder:null,
+              geojson:null
           }
       },
       open:function(obj){
+        var that=this;
         var id = "dialog-"+this.modals.length;
         var header = obj["header"] || "İşlem Bilgileri";
         var obj2 = {
@@ -23,11 +26,33 @@ Vue.component('mydialoginputs', {
         }else{
           obj2.inputs = [];
         }
+
+        this.geocoder = new MapboxGeocoder({
+          accessToken: GL.config.mapboxglAccessToken,
+          mapboxgl: mapboxgl,
+          language:'tr',
+          marker: {
+            color: '#4caf50'
+          },
+          placeholder:'Ara...',
+          clearOnBlur:true
+        });
+
+        this.geocoder.on('result', function(ev) {
+          that.geojson= ev.result;
+          //that.geojson= ev.result;
+        });
+
+        setTimeout(function(){
+          document.getElementById('geocoder3').appendChild(that.geocoder.onAdd(GL.map));
+          var a=$("#geocoder3").find('div')[1];
+          //$('#searchLocation').hide();
+        }, 100);
         
         this.modals.push(obj2);
         setTimeout(function(){
           $("#"+id).modal("show");
-        },100);
+        },300);
         
       },
       close:function(modal,status){
@@ -50,6 +75,12 @@ Vue.component('mydialoginputs', {
         },300);
       },
       GetInputs:function(modal){
+        var that=this;
+        //var a=document.getElementById('geocoder3');
+        //a.removeChild(a.that.geocoder.onRemove(GL.map));   
+        if(modal.inputs[0].id=="searching"){
+          modal.inputs[0].getvalue=this.geojson;
+        }
         GL.titresim();
           if(typeof modal["callback"]!=="undefined"){
             modal.callback({type:'ok',values:modal.inputs});
@@ -86,10 +117,13 @@ Vue.component('mydialoginputs', {
                                 '</i>'+
 
                           '<label v-if="input.type==\'search\'" class="label" for="name5">{{input.title}}</label>'+
-                          '<input :type="input.type" v-if="input.type==\'search\'" v-model="input.getvalue" class="form-control" id="name5" :placeholder="input.title">'+
-                                '<i class="clear-input">'+
-                                    '<ion-icon name="close-circle"></ion-icon>'+
-                                '</i>'+
+                          //'<input :type="input.type" v-if="input.type==\'search\'" v-model="input.getvalue" class="form-control" id="name5" :placeholder="input.title">'+
+                          //      '<i class="clear-input">'+
+                          //          '<ion-icon name="close-circle"></ion-icon>'+
+                          //      '</i>'+
+
+                          '<div class="input-group" v-if="input.type==\'search\'" id="geocoder3" style="border-style: solid; border-width: 2px; margin-top:10px;">'+
+                          '</div>'+
                     '</div>'+
                   '</div>'+
                 // checkbox

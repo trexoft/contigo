@@ -313,6 +313,10 @@ Vue.component('mymenu', {
       e.preventDefault();
       GL.titresim();
       switch (menuid) {
+        case 'navigation':{
+          findnavigation.$children[0].open();
+          break
+        }
         case 'overpass':{
           overpass.$children[0].open();
           break
@@ -363,6 +367,10 @@ Vue.component('mymenu', {
         }
         case 'wms': {
           addwms.$children[0].open();
+          break;
+        }
+        case 'wfst': {
+          addwfst.$children[0].open();
           break;
         }
         case 'wfs': {

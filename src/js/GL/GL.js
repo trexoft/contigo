@@ -1096,7 +1096,11 @@ GL.addGeojsonToLayer=function(geojson,layerid,color,info,zoom){
 
   GL.map.addSource(layerid, { 'type': 'geojson', 'data': geojson });
 
-  var inf={id:layerid,name:info.name,geotype:info.type,layers:[layerid+"-point",layerid+"-line",layerid+"-polygon"],geojson:geojson,fields:fields,lastIndex:index,selectedIndex:[]}
+  if(info.geotype=="wfst"){
+    var inf={namespace2:info.namespace,url:info.url,namespace:info.typename,id:layerid,name:info.name,geotype:info.geotype,layers:[layerid+"-point",layerid+"-line",layerid+"-polygon"],geojson:geojson,fields:fields,lastIndex:index,selectedIndex:[]}
+  }else{
+    var inf={id:layerid,name:info.name,geotype:info.type,layers:[layerid+"-point",layerid+"-line",layerid+"-polygon"],geojson:geojson,fields:fields,lastIndex:index,selectedIndex:[]}
+  }
   GL.layerbox.sources.push(inf);
 
   GL.map.addLayer({
@@ -1451,6 +1455,7 @@ GL.layerbox = {
     {id:'point',extention:false,name :'Point', epsg:'EPSG:4326', type:'VECTOR', img:'./src/img/graphics/point.png'},
     {id:'polygon',extention:false,name :'Polygon', epsg:'EPSG:4326', type:'VECTOR', img:'./src/img/graphics/polygon.png'},
     {id:'mbtile',extention:false,name :'MB Tile', epsg:'EPSG:4326', type:'VECTOR', img:'./src/img/graphics/mbtile.png'},
+    {id:'wfst',extention:false,name :'WFS', epsg:'EPSG:4326', type:'VECTOR', img:'./src/img/graphics/wfs.png'},
     {id:'wfs',extention:false,name :'WFS', epsg:'EPSG:4326', type:'VECTOR', img:'./src/img/graphics/wfs.png'},
     {id:'wkt',extention:false,name :'WKT', epsg:'EPSG:4326', type:'VECTOR', img:'./src/img/graphics/wkt.png'},
     {id:'wmts',extention:false,name :'WMTS', epsg:false, type:'RASTER', img:'./src/img/graphics/wmts.png'},
@@ -2630,6 +2635,17 @@ GL.creteCatalogLayer=function(settings,sets){
             if (typeof features == 'string') {
               features = JSON.parse(features);
             }
+
+            var props = features.features[0].properties;
+            var indexhave = props["index"]!==undefined;
+            if(indexhave){
+              features.features.map(function(gjson){
+                if(typeof gjson.properties.index=="string"){
+                  gjson.properties.index=Number(gjson.properties.index);
+                }
+              })
+            }
+            
             GL.map.addSource(settings.id, {'type': 'geojson', 'data':features});
 
             GL.addLayerHistory(settings);
@@ -3144,6 +3160,28 @@ GL.creteCatalogLayer=function(settings,sets){
           
         });
       */
+
+    break
+    case 'createWFST':
+      var url2=settings.url+"?service=WFS&version="+settings.version+"&srsname=EPSG:4326&request=GetFeature&typeName="+settings.typename+"&outputFormat=application%2Fjson";
+      GL.loading("WFS Yükleniyor");
+
+      $.get(url2,function(data, status){
+          GL.loading(false);
+          if(status=="success"){
+            if(typeof data=="string"){
+              data=JSON.parse(data);
+            };
+            console.log(settings);
+            var color=settings.style.color.color;
+            var information={id:settings.id,name:settings.name,type:'wfst'};
+            GL.addGeojsonToLayer(data,settings.id,color,settings,false);
+            
+          }else{
+            GL.bilgi("Hata");
+          }
+          
+        });
 
     break
     case 'createWMS':
@@ -4001,12 +4039,13 @@ GL.createLayerHistory2=function(method,id,name,url,typename,geotype,version,sele
   GL.addLayerHistory(layer);
 }
 
-GL.createLayerHistory3=function(method,id,name,url,typename,geotype,version,style){
+GL.createLayerHistory3=function(method,id,name,url,typename,geotype,version,style,namespace){
     var layer={
       "method":method,
       "id":id,
       "name":name,
       "url":url,
+      "namespace":namespace,
       "typename":typename,
       "srsname":"EPSG:4326",
 	    "geotype":geotype,
@@ -4077,4 +4116,110 @@ GL.getWFSQuery=function(url,layerName,id){
       GL.addGeojsonToLayer(data,id,color,information,false);
     }
   });
+}
+
+GL.wfst = {
+  getGML: function getGML(layer) {
+    return new ol.format.GML({
+      featureNS: layer.information.namespaceurl,
+      featureType: layer.information.layername,
+      srsName: layer.information.epsg
+    });
+  },
+  send: function send(method, feature, layerId) {
+    //feature.unset("index");
+    var layer=GL.layerbox.getSource(layerId);
+    var feats=[];
+    var reader=new ol.format.GeoJSON();
+    var words = layer.namespace.split(':');
+    
+    if(method=="delete"){
+      for(var i=0;i<feature.length;i++){
+        feature[i].properties=undefined; // hatayı önlüyor
+        var features2 = reader.readFeature(feature[i],{
+          featureProjection: 'EPSG:3857',
+          dataProjection: 'EPSG:4326'
+      });
+        feats.push(features2);
+      }
+    }else if(method=="insert"){
+      for(var i=0;i<feature.length;i++){
+        feature[i].properties=undefined; // hatayı önlüyor
+        var features2 = reader.readFeature(feature[i],{
+          featureProjection: 'EPSG:3857',
+          dataProjection: 'EPSG:4326'
+      });
+      var e=features2.getGeometry().getExtent();
+      features2.setId(undefined);
+      feats.push(features2);
+      }
+    }else if(method=="update"){
+      for(var i=0;i<feature.length;i++){
+        feature[i].properties=undefined; // hatayı önlüyor
+        var features2 = reader.readFeature(feature[i],{
+          featureProjection: 'EPSG:3857',
+          dataProjection: 'EPSG:4326'
+      });
+        feats.push(features2);
+      }
+    }
+      var formatWFS = new ol.format.WFS();
+      var formatGML = new ol.format.GML({
+        featureNS: layer.namespace2,
+        featureType: words[1],
+        srsName: "EPSG:3857"
+      });
+      var xs = new XMLSerializer();
+      var node = false;
+
+      switch (method) {
+        case "insert":
+          node = formatWFS.writeTransaction(feats, null, null, formatGML);
+          break;
+
+        case "update":
+          node = formatWFS.writeTransaction(null, feats, null, formatGML);
+          break;
+
+        case "delete":
+          node = formatWFS.writeTransaction(null, null, feats, formatGML);
+          break;
+      }
+      //"http://localhost:8080/geoserver/deneme/ows"
+      if (node !== false) {
+        var payload = xs.serializeToString(node);
+        $.ajax(layer.url, {
+          type: 'POST',
+          dataType: 'xml',
+          processData: false,
+          contentType: 'text/xml',
+          data: payload
+        }).done(function (res) {
+          console.log(res);
+          GL.removeLayerByID(layer.id);
+          GL.bilgi("Değişiklikler gönderildi");
+        });
+      } else {
+        //GL.uyari(GL.lang.sysmsg.m132);
+        GL.uyari("Değişiklikler gönderilemedi");
+      }
+  }
+};
+
+GL.featureEdit=false;
+GL.editedFeatures=[];
+GL.deletedFeatures=[];
+GL.addedFeatures=[];
+
+GL.editingLayer="";
+GL.hideEditingFeature=function(obj){
+  var layer=GL.layerbox.getSource(obj.source);
+  for(var i=0;i<layer.geojson.features.length;i++){
+    if(obj.properties.index==layer.geojson.features[i].properties.index){
+      GL.editingLayer=layer.id;
+      var geojson={type:'FeatureCollection',features:[]};
+      GL.map.getSource("InfoLayer").setData(geojson);
+      GL.draw.draw.add(layer.geojson.features[i]);
+    }
+  }
 }
