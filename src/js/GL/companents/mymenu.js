@@ -243,37 +243,6 @@ Vue.component('mymenu', {
                 icon: 'git-merge-outline',
                 submenu:[]
               },
-              {
-                id: 'walkingarea',
-                title: GL.lang.panel.mymenu.walkingarea,
-                icon: 'disc-outline',
-                submenu:[]
-              },
-              {
-                id: 'bufferarea',
-                title: GL.lang.panel.mymenu.bufferarea,
-                icon: 'radio-outline',
-                submenu:[]
-              },
-            ]
-          },
-          {
-            id: 'querydata',
-            title: GL.lang.panel.mymenu.querydata,
-            icon: 'search-outline',
-            submenu:[
-              {
-                id: 'spatial',
-                title: GL.lang.panel.mymenu.spatial,
-                icon: 'chevron-forward-outline',
-                submenu:[]
-              },
-              {
-                id: 'textquery',
-                title: GL.lang.panel.mymenu.textquery,
-                icon: 'chevron-forward-outline',
-                submenu:[]
-              }
             ]
           },
           {

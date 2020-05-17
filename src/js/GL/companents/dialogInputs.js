@@ -42,11 +42,12 @@ Vue.component('mydialoginputs', {
           that.geojson= ev.result;
           //that.geojson= ev.result;
         });
-
         setTimeout(function(){
-          document.getElementById('geocoder3').appendChild(that.geocoder.onAdd(GL.map));
-          var a=$("#geocoder3").find('div')[1];
-          //$('#searchLocation').hide();
+          if(document.getElementById('geocoder3')){
+            document.getElementById('geocoder3').appendChild(that.geocoder.onAdd(GL.map));
+            var a=$("#geocoder3").find('div')[1];
+            //$('#searchLocation').hide();
+          }
         }, 100);
         
         this.modals.push(obj2);

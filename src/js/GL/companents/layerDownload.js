@@ -15,12 +15,23 @@ Vue.component('layerdownload', {
               fileType:"geojson",
               dataType:"alldata",
               obj:null,
-              filename:""
+              filename:"",
+              filtered:false,
+              filteredIndexes:[]
           }
       },
-      open:function(obj){
+      open:function(obj,filter){
         $("#downloadModal").modal('show');
         this.obj=obj;
+        this.dataType="alldata";
+        if(filter){
+            this.filtered=true;
+            this.filteredIndexes=filter;
+        }else{
+            this.filtered=false;
+            this.filteredIndexes=[];
+        }
+
         var date = GL.getDate();
         var spl=date.split(" ");
         var day=spl[0];
@@ -35,12 +46,14 @@ Vue.component('layerdownload', {
         GL.titresim();
         $("#downloadModal").modal('hide');
         this.search='';
+        //this.filtered=false;
+        //this.filteredIndexes=[];
       },
       searchEPSG:function(){
         var that = this;
         var search = this.search;
         GL.EPSG.search(search,function(results){
-          GL.bilgi(results.length+' '+"projeskiyon bulundu");
+          GL.bilgi(results.length+' '+"projeksiyon bulundu");
           that.epsglist.data = results;
           if(results.length==1){
             that.epsglist.selected=results[0].code+'';
@@ -111,9 +124,142 @@ Vue.component('layerdownload', {
                         GL.downloadFile('ncn',features,that.filename);
                     }
                 }else if(that.dataType=="chosendata"){
+                    var source=GL.layerbox.getSource(that.obj.id);
+                    if(source.selectedIndex.length==0){
+                        GL.uyari("Seçili Geometri Bulunamadı");
+                    }else{
+                        var selected=source.selectedIndex;
+                        var geojson={type:'FeatureCollection',features:[]};
+                        for(var i=0;i<source.geojson.features.length;i++){
+                            if(selected.indexOf(source.geojson.features[i].properties.index)!=-1){
+                                geojson.features.push(source.geojson.features[i]);
+                            }
+                        }
+
+                        if(that.fileType=='geojson'){
+                            var reader = new ol.format.GeoJSON();
+                            var features=reader.readFeatures(geojson,{
+                                featureProjection: 'EPSG:'+that.epsglist.selected,
+                                dataProjection: 'EPSG:4326'
+                            });
+                            GL.downloadFile('geojson',features,that.filename);
+                        }else if(that.fileType=='wkt'){
+                            var reader = new ol.format.GeoJSON();
+                            var features=reader.readFeatures(geojson,{
+                                featureProjection: 'EPSG:'+that.epsglist.selected,
+                                dataProjection: 'EPSG:4326'
+                            });
+                            GL.downloadFile('wkt',features,that.filename);
+                        }else if(that.fileType=='kml'){
+                            var reader = new ol.format.GeoJSON();
+                            var features=reader.readFeatures(geojson,{
+                                featureProjection: 'EPSG:'+that.epsglist.selected,
+                                dataProjection: 'EPSG:4326'
+                            });
+                            GL.downloadFile('kml',features,that.filename);
+                        }else if(that.fileType=='gpx'){
+                            var reader = new ol.format.GeoJSON();
+                            var features=reader.readFeatures(geojson,{
+                                featureProjection: 'EPSG:'+that.epsglist.selected,
+                                dataProjection: 'EPSG:4326'
+                            });
+                            GL.downloadFile('gpx',features,that.filename);
+                        }else if(that.fileType=='shp'){
+                            var reader = new ol.format.GeoJSON();
+                            var features=reader.readFeatures(geojson,{
+                                featureProjection: 'EPSG:'+that.epsglist.selected,
+                                dataProjection: 'EPSG:4326'
+                            });
+                            GL.downloadFile('shp',features,that.filename);
+                        }else if(that.fileType=='xls'){
+                            var reader = new ol.format.GeoJSON();
+    
+                            var features=reader.readFeatures(geojson,{
+                                featureProjection: 'EPSG:'+that.epsglist.selected,
+                                dataProjection: 'EPSG:4326'
+                            });
+    
+                            GL.downloadFile('xls',features,that.filename);
+                        }else if(that.fileType=='ncn'){
+                            var reader = new ol.format.GeoJSON();
+    
+                            var features=reader.readFeatures(geojson,{
+                                featureProjection: 'EPSG:'+that.epsglist.selected,
+                                dataProjection: 'EPSG:4326'
+                            });
+    
+                            GL.downloadFile('ncn',features,that.filename);
+                        }
+                    }
 
                 }else if(that.dataType=="filterdata"){
+                    console.log(that.filteredIndexes);
+                    if(that.filteredIndexes.length==0){
+                        GL.uyari("Filtrelenen Geometri Bulunamadı");
+                    }else{
+                        var source=GL.layerbox.getSource(that.obj.id);
+                        var geojson={type:'FeatureCollection',features:[]};
+                        for(var i=0;i<source.geojson.features.length;i++){
+                            if(that.filteredIndexes.indexOf(source.geojson.features[i].properties.index)!=-1){
+                                geojson.features.push(source.geojson.features[i]);
+                            }
+                        }
 
+                        if(that.fileType=='geojson'){
+                            var reader = new ol.format.GeoJSON();
+                            var features=reader.readFeatures(geojson,{
+                                featureProjection: 'EPSG:'+that.epsglist.selected,
+                                dataProjection: 'EPSG:4326'
+                            });
+                            GL.downloadFile('geojson',features,that.filename);
+                        }else if(that.fileType=='wkt'){
+                            var reader = new ol.format.GeoJSON();
+                            var features=reader.readFeatures(geojson,{
+                                featureProjection: 'EPSG:'+that.epsglist.selected,
+                                dataProjection: 'EPSG:4326'
+                            });
+                            GL.downloadFile('wkt',features,that.filename);
+                        }else if(that.fileType=='kml'){
+                            var reader = new ol.format.GeoJSON();
+                            var features=reader.readFeatures(geojson,{
+                                featureProjection: 'EPSG:'+that.epsglist.selected,
+                                dataProjection: 'EPSG:4326'
+                            });
+                            GL.downloadFile('kml',features,that.filename);
+                        }else if(that.fileType=='gpx'){
+                            var reader = new ol.format.GeoJSON();
+                            var features=reader.readFeatures(geojson,{
+                                featureProjection: 'EPSG:'+that.epsglist.selected,
+                                dataProjection: 'EPSG:4326'
+                            });
+                            GL.downloadFile('gpx',features,that.filename);
+                        }else if(that.fileType=='shp'){
+                            var reader = new ol.format.GeoJSON();
+                            var features=reader.readFeatures(geojson,{
+                                featureProjection: 'EPSG:'+that.epsglist.selected,
+                                dataProjection: 'EPSG:4326'
+                            });
+                            GL.downloadFile('shp',features,that.filename);
+                        }else if(that.fileType=='xls'){
+                            var reader = new ol.format.GeoJSON();
+    
+                            var features=reader.readFeatures(geojson,{
+                                featureProjection: 'EPSG:'+that.epsglist.selected,
+                                dataProjection: 'EPSG:4326'
+                            });
+    
+                            GL.downloadFile('xls',features,that.filename);
+                        }else if(that.fileType=='ncn'){
+                            var reader = new ol.format.GeoJSON();
+    
+                            var features=reader.readFeatures(geojson,{
+                                featureProjection: 'EPSG:'+that.epsglist.selected,
+                                dataProjection: 'EPSG:4326'
+                            });
+    
+                            GL.downloadFile('ncn',features,that.filename);
+                        }
+                    }
                 }
                 
             })  
@@ -180,7 +326,7 @@ Vue.component('layerdownload', {
                                             '<select v-model="dataType" class="form-control custom-select" id="data">'+
                                                 '<option value="alldata">Bütün geometriler </option>'+
                                                 '<option value="chosendata">Seçilen geometriler</option>'+
-                                                '<option value="filterdata">Filtrelenen geometriler</option>'+
+                                                '<option v-if="filtered==true" value="filterdata">Filtrelenen geometriler</option>'+
                                             '</select>'+
                                     '</div>'+
                                 '</div>'+

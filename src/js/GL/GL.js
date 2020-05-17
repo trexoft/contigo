@@ -314,7 +314,6 @@ GL.map.on('touchend',function(e){
     var features = GL.map.queryRenderedFeatures(e.point, {
       layers: layers
     });
-
     // eğer tıklanan "selectLayer" katmanı içerisindeyse "sselect" seçimini kaldır
     if(features.length!=0){
       for(var k=0;k<features.length;k++){
@@ -4222,4 +4221,230 @@ GL.hideEditingFeature=function(obj){
       GL.draw.draw.add(layer.geojson.features[i]);
     }
   }
+}
+
+GL.columnCalculations = function (layerId, column, method, valself, columninput,eklenecek, datatype, index) {
+  console.log(valself);
+  console.log(columninput);
+  console.log(eklenecek);
+  console.log(datatype);
+  console.log(index);
+
+  var layer = GL.layerbox.getSource(layerId);
+
+  if (method == 'charedit') {
+    if (eklenecek.indexOf('->') == -1) {
+      GL.uyari("Hata");
+      return false;
+    }
+  }
+
+  if (index.length == 0) {
+    GL.uyari("Geometri yok");
+    return false;
+  }
+
+  layer.geojson.features.map(function (feature) {
+    var index2 = feature.properties.index;
+
+    if (index.indexOf(index2) !== -1) {
+      var deger = feature.properties[column];
+
+      switch (datatype) {
+        case "number":
+          deger = parseFloat(deger);
+          break;
+      }
+      if (valself == 'self') {
+        switch (method) {
+          case '>':
+            // Upper case
+            feature.properties[column]=feature.properties[column].toUpperCase();
+            break;
+
+          case '<':
+            // to lower case
+            feature.properties[column]=feature.properties[column].toLowerCase();
+            break;
+
+          case '>=':
+            // İlk harfi büyüt
+            var first=feature.properties[column][0].toUpperCase();
+            var con=feature.properties[column].substring(1);
+            var final=first+con;
+            feature.properties[column]=final;
+            break;
+
+          case 'intflo':
+            // sayıya çevir
+            if (isNaN(deger) == false) {
+              feature.properties[column]=parseFloat(deger);
+            } else {
+              feature.properties[column]=0;
+            }
+            break;
+
+          case '|val':
+            //Mutlak Değerini Al"
+            feature.properties[column]=Math.abs(deger);
+            break;
+
+          case '--':
+            // Negatif yap
+            feature.properties[column]=Math.abs(deger)*-1;
+            break;
+
+          case 'cos':
+            // Cos
+            feature.properties[column]= Math.cos(deger);
+            break;
+
+          case 'sin':
+            // Sin
+            feature.properties[column]=Math.sin(deger);
+            break;
+
+          case 'tan':
+            //tan
+            feature.properties[column]=Math.tan(deger);
+            break;
+
+          case 'atan':
+            //atan
+            feature.properties[column]=Math.atan(deger);
+            break;
+
+          case 'log':
+            //log
+            feature.properties[column]=Math.log(deger);
+            break;
+
+          case 'ceil':
+            //ceil
+            feature.properties[column]=Math.ceil(deger);
+            break;
+
+          case 'floor':
+            //aşağı yuvarla
+            feature.properties[column]=Math.floor(deger);
+            break;
+
+          case 'int':
+            //integera çevir
+            feature.properties[column]=parseInt(deger, 10);
+            break;
+
+          case 'clear':
+            switch (datatype) {
+              case "number":
+                feature.properties[column]=0;
+                break;
+
+              case "double":
+                feature.properties[column]=0;
+                break;
+
+              case "string":
+                feature.properties[column]="";
+                break;
+
+              case "boolean":
+                feature.properties[column]=false;
+                break;
+            }
+
+            break;
+        }
+      } else if (valself == 'val') {
+        var deger2;
+
+        if (kolongirdi == 'kolon') {
+          deger2 = feature.get(eklenecek);
+        } else if (kolongirdi == 'deger') {
+          deger2 = eklenecek;
+        }
+
+        switch (datatype) {
+          case "number":
+            deger2 = parseFloat(deger2);
+            break;
+        }
+
+        switch (metod) {
+          case '+':
+            feature.set(kolon, deger + " " + deger2);
+            break;
+
+          case '+val':
+            var sonuc = deger + deger2;
+            feature.set(kolon, sonuc);
+            break;
+
+          case '-val':
+            var sonuc = deger - deger2;
+            feature.set(kolon, sonuc);
+            break;
+
+          case '*val':
+            var sonuc = deger * deger2;
+            feature.set(kolon, sonuc);
+            break;
+
+          case '/val':
+            var sonuc = deger / deger2;
+            feature.set(kolon, sonuc);
+            break;
+
+          case '2val':
+            var sonuc = Math.pow(deger, deger2);
+            feature.set(kolon, sonuc);
+            break;
+
+          case '3val':
+            var sonuc = Math.sqrt(deger, deger2);
+            feature.set(kolon, sonuc);
+            break;
+
+          case '%val':
+            var sonuc = deger % deger2;
+            feature.set(kolon, sonuc);
+            break;
+
+          case 'equal':
+            feature.set(kolon, deger2);
+            break;
+
+          case 'chardel':
+            while (deger.indexOf(deger2) !== -1) {
+              deger = deger.replace(deger2, '');
+            }
+
+            feature.set(kolon, deger);
+            break;
+
+          case 'charedit':
+            var parca = deger2.split('->');
+            var eski = parca[0];
+            var yeni = parca[1];
+
+            if (yeni.indexOf(eski) !== -1) {
+              deger = deger.replace(eski, yeni);
+            } else {
+              while (deger.indexOf(eski) !== -1) {
+                deger = deger.replace(eski, yeni);
+              }
+            }
+
+            feature.set(kolon, deger);
+            break;
+
+          case 'round':
+            feature.set(kolon, turf.round(deger, deger2));
+            break;
+        }
+      }
+    }
+  });
+  console.log(layer.geojson);
+  return true
 }

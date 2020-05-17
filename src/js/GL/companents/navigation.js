@@ -298,7 +298,7 @@ Vue.component('findnavigation', {
           
       },
       addwaypoint:function(){
-          this.waypoints.push({id:"w"+this.waypoints.length+1,value:"",number:this.waypoints.length});
+          this.waypoints.push({id:"w"+this.waypoints.length+1,value:"",number:this.waypoints.length,showvalue:""});
       },
       removewaypoint:function(i){
         //this.waypoints.splice(i,1);
@@ -358,20 +358,24 @@ Vue.component('findnavigation', {
 
                     // waypoints
                     '<div class="form-group boxed">'+
-                    '<div style="font-size: 17px; font-weight:600; padding-left:90px;">Ara Noktalar</div>'+
+                        '<div style="padding-left:100px;"><button class="btn btn-success" type="button" @click="addwaypoint">Ara Nokta Ekle</button></div>'+
+                    '</div>'+
+
+                    '<div class="form-group boxed">'+
+                    
                         '<div v-for="(item,i) in waypoints" class="input-group mb-3" style="width:90%; float:right;">'+
                             '<div class="input-group-prepend">'+
-                            '<span v-if="item.id==\'w1\'" class="btn btn-icon btn-primary mr-1 mb-1">W</span>'+
+                            //'<span v-if="item.id==\'w1\'" class="btn btn-icon btn-primary mr-1 mb-1">W</span>'+
                             '<span v-if="item.id!=\'w1\'" class="btn btn-icon btn-primary mr-1 mb-1">{{item.number}}</span>'+
                             '</div>'+
                             
-                            '<input v-model="item.showvalue" type="text" class="form-control" readonly>'+
+                            '<input v-if="item.id!=\'w1\'" v-model="item.showvalue" type="text" class="form-control" readonly>'+
                             '<div class="input-group-append">'+
-                            '<button v-if="item.id==\'w1\'" type="button" @click="addwaypoint" class="btn btn-icon btn-success mr-1 mb-1"><ion-icon name="add-outline"></ion-icon></button>'+
+                            
                             '<button v-if="item.id!=\'w1\'" type="button" @click="removewaypoint(i)" class="btn btn-icon btn-warning mr-1 mb-1"><ion-icon name="remove-outline"></ion-icon></button>'+
                             '</div>'+
                             '<div class="input-group-append">'+
-                            '<button type="button" @click="getLocation(item.id)" class="btn btn-icon btn-info mr-1 mb-1"><ion-icon name="search-outline"></ion-icon></button>'+
+                            '<button type="button" v-if="item.id!=\'w1\'" @click="getLocation(item.id)" class="btn btn-icon btn-info mr-1 mb-1"><ion-icon name="search-outline"></ion-icon></button>'+
                             '</div>'+
                         '</div>'+
                     '</div>'+
