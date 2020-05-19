@@ -62,7 +62,6 @@ Vue.component('columncalculations', {
       open:function(sourceid){
         $("#columncalculationsModal").modal('show');
         var layer=GL.layerbox.getSource(sourceid);
-        console.log(layer);
         this.layer=layer;
         for(var i=0;i<layer.fields.length;i++){
             if(layer.fields[i].name!="index" && layer.fields[i].name!="geotype"){
@@ -70,18 +69,33 @@ Vue.component('columncalculations', {
             }
         }
       },
+      clearValues:function(){
+        this.fields=[];
+        this.selectedColumn="";
+        this.layer="";
+        this.value="";
+        this.eklenecek="";
+        this.filteredColons=[];
+        this.yonelim.selected="";
+        this.chosenType="";
+        this.calculationType="";
+        this.islemler.selected="";
+        this.tabledata.selected="all";
+      },
       close:function(e){
         $("#columncalculationsModal").modal('hide');
+      },
+      close2:function(){
+        $("#columncalculationsModal").modal('hide');
+        this.clearValues();
       },
       selectColumn:function(){
         var that = this;
         var kolon = this.fields.find(function(a){if(a.name==that.selectedColumn){return true;}});
-        console.log(kolon);
         var type = kolon.type;
         
         this.chosenType=type;
         if(this.chosenType=='double' || this.chosenType=="integer"){this.chosenType='number';}
-        console.log(this.chosenType);
         
         if(type=='string'){
           this.filteredColons = this.fields;
@@ -90,12 +104,10 @@ Vue.component('columncalculations', {
           this.filteredColons = filter;
         }
         this.calculationType='';
-        console.log(this.filteredColons);
       },
       islemSecildi:function(){
         var that = this;
         var islem = this.islemler.data.find(function(a){if(a.value==that.islemler.selected){return true;}});
-        console.log(islem);
         var islemtipi = islem.islem; // val or self
         this.calculationType=islemtipi;
         this.yonelim.selected = '';
@@ -113,21 +125,23 @@ Vue.component('columncalculations', {
 
             var datatype = kolonobj.type;
             var degerkendi = filterislem.islem;
-            console.log(degerkendi);
             var metod = filterislem.value;
             var secilenler = [];
             if(this.tabledata.selected=='filtered'){
               secilenler = datatable.$children[0].table.getData(true);
             }else if(this.tabledata.selected=='selected'){
-              secilenler = datatable.$children[0].table.getSelectedData();
-            }else{
+              showindex = this.layer.selectedIndex;
+            }else if(this.tabledata.selected=='all'){
               secilenler = datatable.$children[0].table.getData();
             }
-            var showindex = [];
-            secilenler.map(function(a){
-              showindex.push(a.index);
-            });
 
+            if(this.tabledata.selected=='filtered' || this.tabledata.selected=='all'){
+              var showindex = [];
+              secilenler.map(function(a){
+                showindex.push(a.index);
+              });
+            }
+            
             if(degerkendi=='val'){
 
               var kolongirdi = this.yonelim.selected;
@@ -138,14 +152,18 @@ Vue.component('columncalculations', {
                   //----------
                   var islemsonuc = GL.columnCalculations(this.layer.id,kolon,metod,degerkendi,kolongirdi,deger,datatype,showindex);
                   if(islemsonuc){
-                    //GL.layerDataSource(this.layerId);
-                    //GL.onay(kolon+' '+that.sysmsg.m108);
+                    var data = GL.datatable.getData(this.layer.geojson,this.layer.fields);
+                    datatable.$children[0].table.setData(data);
+                    this.clearValues();
+                    $("#columncalculationsModal").modal('hide');
+                    datatable.$children[0].setPage("tab2");
+                    GL.bilgi("İşlem Başarılı");
                   }else{
-                    //GL.uyari(kolon+' '+that.sysmsg.m107);
+                    GL.uyari(kolon+' '+"Kolonu Malesef Degistirilememistir");
                   }
                   
                 }else{
-                  GL.uyari(that.sysmsg.m111);
+                  GL.uyari("Işlem Yapabileceginiz Bir Değer Giriniz");
                 }
               }else if(kolongirdi=='kolon'){
                 var islemkolon = this.eklenecek;
@@ -153,38 +171,45 @@ Vue.component('columncalculations', {
                   //---------
                   var islemsonuc = GL.columnCalculations(this.layer.id,kolon,metod,degerkendi,kolongirdi,this.eklenecek,datatype,showindex);
                   if(islemsonuc){
-                    GL.layerDataSource(this.layerId);
-                    GL.onay(kolon+' '+that.sysmsg.m108);
+                    var data = GL.datatable.getData(this.layer.geojson,this.layer.fields);
+                    datatable.$children[0].table.setData(data);
+                    this.clearValues();
+                    $("#columncalculationsModal").modal('hide');
+                    datatable.$children[0].setPage("tab2");
+                    GL.bilgi("İşlem Başarılı");
                   }else{
-                    GL.uyari(kolon+' '+that.sysmsg.m107);
+                    GL.uyari(kolon+' '+"Kolonu Malesef Degistirilememistir");
                   }
                 }else{
-                  GL.uyari(that.sysmsg.m109);
+                  GL.uyari("İşlem Yapabileceginiz Bir Kolon Seçiniz");
                 }
   
               }else{
-                GL.uyari(that.sysmsg.m110);
+                GL.uyari("Girdi Tipi Seçmeniz Gerekmektedir");
               }
             }else if(degerkendi=='self'){
               var islemsonuc = GL.columnCalculations(this.layer.id,kolon,metod,degerkendi,kolongirdi,this.eklenecek,datatype,showindex);
-              console.log(islemsonuc);
               if(islemsonuc){
-                //GL.layerDataSource(this.layerId);
-                //GL.onay(kolon+' '+that.sysmsg.m108);
+                var data = GL.datatable.getData(this.layer.geojson,this.layer.fields);
+                datatable.$children[0].table.setData(data);
+                this.clearValues();
+                $("#columncalculationsModal").modal('hide');
+                datatable.$children[0].setPage("tab2");
+                GL.bilgi("İşlem Başarılı");
               }else{
-                //GL.uyari(kolon+' '+that.sysmsg.m107);
+                GL.uyari(kolon+' '+"Kolonu Malesef Degistirilememistir");
               }
               //----
   
             }else{
-              GL.uyari("hata1");
+              GL.uyari("İşlem Tipi Seçmeniz Gerekmektedir");
             }
           }else{
-            GL.uyari("hata2");
+            GL.uyari("Bir İşlem Tipi Seçmeniz Gerekmektedir");
           }
           
         }else{
-          GL.uyari("hata3");
+          GL.uyari("İşlem Yapılacak Kolonu Seçmeniz Gerekmektedir");
         }
       },
   },
@@ -194,7 +219,7 @@ Vue.component('columncalculations', {
                 '<div class="modal-content">'+
                     '<div class="modal-header">'+
                         '<h5 class="modal-title" style="padding-left: 70px">{{header}}</h5>'+
-                        '<a @click="close" href="javascript:;" data-dismiss="modal">{{close}}</a>'+
+                        '<a @click="close2" href="javascript:;" data-dismiss="modal">{{close}}</a>'+
                     '</div>'+
                     '<div class="modal-body p-0">'+
                         '<div class="section mt-4 mb-5">'+

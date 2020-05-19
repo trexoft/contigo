@@ -14,7 +14,6 @@ GL.config = {
   clientHeight:300,
   gettingInformation:true,
   colors:['#f44336', '#e91e63', '#9c27b0', '#673ab7', '#3f51b5', '#2196f3', '#03a9f4', '#00bcd4', '#009688', '#4caf50', '#8bc34a', '#cddc39', '#ffeb3b', '#ffc107', '#ff9800', '#ff5722', '#795548', '#9e9e9e', '#607d8b']
-
 };
 
 
@@ -135,8 +134,6 @@ GL.map.on('touchend',function(e){
   if((fark>0 && fark<500) && (center1.lng==center2.lng && center1.lat==center2.lat)){
     GL.touch.startTime = Date.now();
     if(GL.layerbox!==undefined){
-      if(GL.config.gettingInformation){
-        GL.loading("Bilgiler Alınıyor");
         var alllayers = GL.layerbox.layers;
         var layers = [];
         alllayers.map(function(layer){
@@ -145,7 +142,138 @@ GL.map.on('touchend',function(e){
         var features = GL.map.queryRenderedFeatures(e.point, {
           layers: layers
         });
+        console.log(features);
 
+      // for spatial query
+      if(GL.selectFeatureOnMap){
+        if(features.length>1){
+          GL.uyari("1'den fazla geometri seçmeyiniz");
+        }else if(features.length==1){
+          // intersect
+          if(GL.selectMethod=="intersect" && features[0].properties.geotype=="LineString"){
+            var geojson={type:'FeatureCollection',features:[]};
+
+            var geom=features;
+            var layerid=geom[0].layer.source;
+  
+            var layerr=GL.layerbox.getSource(layerid);
+            for(var i=0;i<layerr.geojson.features.length;i++){
+                if(geom[0].properties.index==layerr.geojson.features[i].properties.index){
+                      GL.map.getSource("InfoLayer").setData(layerr.geojson.features[i]);
+                      break
+                }
+            }
+            GL.selectFeatureOnMapGeojson=features;
+  
+            setTimeout(function(){
+              $("#spatialqueryModal").modal('show');
+              spatialquery.$children[0].getSelectedFeature();
+              GL.map.getSource("InfoLayer").setData(geojson);
+            }, 500);
+          }else if(GL.selectMethod=="intersect" && features[0].properties.geotype!="LineString"){
+            GL.uyari("Lütfen Çizgi Geometrisi Seçiniz");
+          }
+          // contains
+          if(GL.selectMethod=="within" && features[0].properties.geotype=="Polygon"){
+            var geojson={type:'FeatureCollection',features:[]};
+
+            var geom=features;
+            var layerid=geom[0].layer.source;
+  
+            var layerr=GL.layerbox.getSource(layerid);
+            for(var i=0;i<layerr.geojson.features.length;i++){
+                if(geom[0].properties.index==layerr.geojson.features[i].properties.index){
+                      GL.map.getSource("InfoLayer").setData(layerr.geojson.features[i]);
+                      break
+                }
+            }
+            GL.selectFeatureOnMapGeojson=features;
+  
+            setTimeout(function(){
+              $("#spatialqueryModal").modal('show');
+              spatialquery.$children[0].getSelectedFeature();
+              GL.map.getSource("InfoLayer").setData(geojson);
+            }, 500);
+          }else if(GL.selectMethod=="within" && features[0].properties.geotype!="Polygon"){
+            GL.uyari("Lütfen Poligon Geometrisi Seçiniz");
+          }
+          //overlap
+          if(GL.selectMethod=="overlap" && features[0].properties.geotype=="Polygon"){
+            var geojson={type:'FeatureCollection',features:[]};
+
+            var geom=features;
+            var layerid=geom[0].layer.source;
+  
+            var layerr=GL.layerbox.getSource(layerid);
+            for(var i=0;i<layerr.geojson.features.length;i++){
+                if(geom[0].properties.index==layerr.geojson.features[i].properties.index){
+                      GL.map.getSource("InfoLayer").setData(layerr.geojson.features[i]);
+                      break
+                }
+            }
+            GL.selectFeatureOnMapGeojson=features;
+  
+            setTimeout(function(){
+              $("#spatialqueryModal").modal('show');
+              spatialquery.$children[0].getSelectedFeature();
+              GL.map.getSource("InfoLayer").setData(geojson);
+            }, 500);
+          }else if(GL.selectMethod=="within" && features[0].properties.geotype!="Polygon"){
+            GL.uyari("Lütfen Poligon Geometrisi Seçiniz");
+          }
+          // contains
+          if(GL.selectMethod=="contains" && features[0].properties.geotype=="Point"){
+            var geojson={type:'FeatureCollection',features:[]};
+
+            var geom=features;
+            var layerid=geom[0].layer.source;
+  
+            var layerr=GL.layerbox.getSource(layerid);
+            for(var i=0;i<layerr.geojson.features.length;i++){
+                if(geom[0].properties.index==layerr.geojson.features[i].properties.index){
+                      GL.map.getSource("InfoLayer").setData(layerr.geojson.features[i]);
+                      break
+                }
+            }
+            GL.selectFeatureOnMapGeojson=features;
+  
+            setTimeout(function(){
+              $("#spatialqueryModal").modal('show');
+              spatialquery.$children[0].getSelectedFeature();
+              GL.map.getSource("InfoLayer").setData(geojson);
+            }, 500);
+          }else if(GL.selectMethod=="contains" && features[0].properties.geotype!="Point"){
+            GL.uyari("Lütfen Nokta Geometrisi Seçiniz");
+          }
+          // disjoint
+          if(GL.selectMethod=="disjoint"){
+            var geojson={type:'FeatureCollection',features:[]};
+
+            var geom=features;
+            var layerid=geom[0].layer.source;
+  
+            var layerr=GL.layerbox.getSource(layerid);
+            for(var i=0;i<layerr.geojson.features.length;i++){
+                if(geom[0].properties.index==layerr.geojson.features[i].properties.index){
+                      GL.map.getSource("InfoLayer").setData(layerr.geojson.features[i]);
+                      break
+                }
+            }
+            GL.selectFeatureOnMapGeojson=features;
+  
+            setTimeout(function(){
+              $("#spatialqueryModal").modal('show');
+              spatialquery.$children[0].getSelectedFeature();
+              GL.map.getSource("InfoLayer").setData(geojson);
+            }, 500);
+          }
+          
+        }
+        
+      }
+
+      if(GL.config.gettingInformation){
+        GL.loading("Bilgiler Alınıyor");
         // Boş yere tıklanınca info katmanını temizle
         //if(features.length==0){
         //  GL.clearFilters();
@@ -175,7 +303,7 @@ GL.map.on('touchend',function(e){
           }
         }
         */
-
+        
         // info select ve showlayer seçimlerini listeden sil
         for(var j=0; j<features.length;j++){
           if(features[j].source=="InfoLayer"){
@@ -3757,7 +3885,7 @@ GL.clearFilters=function(){
   var controlSource=[];
   GL.map.getSource("InfoLayer").setData(geojson);
   for(var i=0;i<GL.layerbox.layers.length;i++){
-    if(GL.layerbox.layers[i].source!="InfoLayer" && GL.layerbox.layers[i].source!="SelectLayer" && GL.layerbox.layers[i].source!="ShowLayer"){
+    if(GL.layerbox.layers[i].source!="InfoLayer" && GL.layerbox.layers[i].source!="SelectLayer" && GL.layerbox.layers[i].source!="ShowLayer" && GL.layerbox.layers[i].source!="BookmarkLayer"){
       if(controlSource.indexOf(GL.layerbox.layers[i].source)==-1){
         controlSource.push(GL.layerbox.layers[i].source);
         var getSource=GL.layerbox.getSource(GL.layerbox.layers[i].source);
@@ -3775,6 +3903,9 @@ GL.clearFilters=function(){
           ["all",["==", ["geometry-type"], "Point"],
           ['!',['in', ["number","get","properties",["get","index"]],["literal", getSource.selectedIndex]]]]);
       }
+    }else if(GL.layerbox.layers[i].source!="BookmarkLayer"){
+      GL.refreshBookmarkLayer();
+      //GL.getBookmarks();
     }
   }
 }
@@ -4224,23 +4355,17 @@ GL.hideEditingFeature=function(obj){
 }
 
 GL.columnCalculations = function (layerId, column, method, valself, columninput,eklenecek, datatype, index) {
-  console.log(valself);
-  console.log(columninput);
-  console.log(eklenecek);
-  console.log(datatype);
-  console.log(index);
-
   var layer = GL.layerbox.getSource(layerId);
 
   if (method == 'charedit') {
     if (eklenecek.indexOf('->') == -1) {
-      GL.uyari("Hata");
+      GL.uyari("Karakter degisim belirteci yanlış yazılmıştır. Örnek : a->b");
       return false;
     }
   }
 
   if (index.length == 0) {
-    GL.uyari("Geometri yok");
+    GL.uyari("Kayıt Bulunamadı");
     return false;
   }
 
@@ -4340,6 +4465,10 @@ GL.columnCalculations = function (layerId, column, method, valself, columninput,
                 feature.properties[column]=0;
                 break;
 
+              case "integer":
+                  feature.properties[column]=0;
+              break;
+
               case "double":
                 feature.properties[column]=0;
                 break;
@@ -4358,9 +4487,9 @@ GL.columnCalculations = function (layerId, column, method, valself, columninput,
       } else if (valself == 'val') {
         var deger2;
 
-        if (kolongirdi == 'kolon') {
-          deger2 = feature.get(eklenecek);
-        } else if (kolongirdi == 'deger') {
+        if (columninput == 'kolon') {
+          deger2 = feature.properties[eklenecek]
+        } else if (columninput == 'deger') {
           deger2 = eklenecek;
         }
 
@@ -4368,50 +4497,57 @@ GL.columnCalculations = function (layerId, column, method, valself, columninput,
           case "number":
             deger2 = parseFloat(deger2);
             break;
+          case "integer":
+              deger2 = parseFloat(deger2);
+          break;
+          case "float":
+              deger2 = parseFloat(deger2);
+          break;
         }
 
-        switch (metod) {
+        switch (method) {
           case '+':
-            feature.set(kolon, deger + " " + deger2);
+            // birleştir
+            feature.properties[column]=deger + " " + deger2;
             break;
 
           case '+val':
             var sonuc = deger + deger2;
-            feature.set(kolon, sonuc);
+            feature.properties[column]=sonuc;
             break;
 
           case '-val':
             var sonuc = deger - deger2;
-            feature.set(kolon, sonuc);
+            feature.properties[column]=sonuc;
             break;
 
           case '*val':
             var sonuc = deger * deger2;
-            feature.set(kolon, sonuc);
+            feature.properties[column]=sonuc;
             break;
 
           case '/val':
             var sonuc = deger / deger2;
-            feature.set(kolon, sonuc);
+            feature.properties[column]=sonuc;
             break;
 
           case '2val':
             var sonuc = Math.pow(deger, deger2);
-            feature.set(kolon, sonuc);
+            feature.properties[column]=sonuc;
             break;
 
           case '3val':
             var sonuc = Math.sqrt(deger, deger2);
-            feature.set(kolon, sonuc);
+            feature.properties[column]=sonuc;
             break;
 
           case '%val':
             var sonuc = deger % deger2;
-            feature.set(kolon, sonuc);
+            feature.properties[column]=sonuc;
             break;
 
           case 'equal':
-            feature.set(kolon, deger2);
+            feature.properties[column]=deger2;
             break;
 
           case 'chardel':
@@ -4419,7 +4555,7 @@ GL.columnCalculations = function (layerId, column, method, valself, columninput,
               deger = deger.replace(deger2, '');
             }
 
-            feature.set(kolon, deger);
+            feature.properties[column]=deger;
             break;
 
           case 'charedit':
@@ -4435,16 +4571,243 @@ GL.columnCalculations = function (layerId, column, method, valself, columninput,
               }
             }
 
-            feature.set(kolon, deger);
+            feature.properties[column]=deger;
             break;
 
           case 'round':
-            feature.set(kolon, turf.round(deger, deger2));
+            var val=turf.round(deger, deger2);
+            feature.properties[column]=val;
             break;
         }
       }
     }
   });
-  console.log(layer.geojson);
   return true
 }
+
+GL.spatialQuery = function (sourceId,method, methodValue, operation, value,unit) {
+  var indexes=[];
+  switch(method){
+    case 'value':
+      var layer=GL.layerbox.getSource(sourceId);
+      
+      layer.geojson.features.map(function (feature) {
+        if(methodValue=="length"){
+          if(feature.properties.geotype=="LineString"){
+            var length = turf.length(feature, {units: unit});
+            if(operation=="==" && length==value){
+              indexes.push(feature.properties.index);
+            }else if(operation==">" && length>value){
+              indexes.push(feature.properties.index);
+            }else if(operation==">=" && length>=value){
+              indexes.push(feature.properties.index);
+            }else if(operation=="<" && length<value){
+              indexes.push(feature.properties.index);
+            }else if(operation=="<=" && length<=value){
+              indexes.push(feature.properties.index);
+            }
+          }
+        }else if(methodValue=="area"){
+          if(feature.properties.geotype=="Polygon"){
+            var area = turf.area(feature);
+            if(operation=="==" && area==value){
+              indexes.push(feature.properties.index);
+            }else if(operation==">" && area>value){
+              indexes.push(feature.properties.index);
+            }else if(operation==">=" && area>=value){
+              indexes.push(feature.properties.index);
+            }else if(operation=="<" && area<value){
+              indexes.push(feature.properties.index);
+            }else if(operation=="<=" && area<=value){
+              indexes.push(feature.properties.index);
+            }
+          }
+        }
+
+      })
+
+      if(indexes.length==0){
+        return false
+      }else{
+        return indexes;
+      }
+
+    case 'map':
+      var layer=GL.layerbox.getSource(sourceId);
+      console.log(methodValue);
+      layer.geojson.features.map(function (feature) {
+        if(methodValue=="intersect"){
+          if(feature.properties.geotype=="Polygon" && value.geometry.type=="LineString"){
+            g1 = turf.polygonToLine(feature);
+            var status = turf.lineIntersect(g1, value);
+          }else if(feature.properties.geotype=="Polygon" && value.geometry.type=="Polygon"){
+            g1 = turf.polygonToLine(feature);
+            g2 = turf.polygonToLine(value);
+            var status = turf.lineIntersect(g1, g2);
+          }else if(feature.properties.geotype=="Point" && value.geometry.type=="LineString"){
+            var status = turf.booleanPointOnLine(feature, value);
+          }else if(feature.properties.geotype=="Point" && value.geometry.type=="Polygon"){
+            g2 = turf.polygonToLine(value);
+            var status = turf.booleanPointOnLine(feature, g2);
+          }else if(feature.properties.geotype=="LineString" && value.geometry.type=="LineString"){
+            var status = turf.lineIntersect(feature, value);
+          }else if(feature.properties.geotype=="LineString" && value.geometry.type=="Polygon"){
+            g2 = turf.polygonToLine(value);
+            var status = turf.lineIntersect(feature, g2);
+          }
+        }else if(methodValue=="within"){
+          // polygon
+          status = turf.booleanWithin(feature, value);
+          console.log(status);
+        }else if(methodValue=="contains"){
+          //point
+          status = turf.booleanContains(feature, value);
+          console.log(status);
+        }else if(methodValue=="overlap"){
+          //var line = turf.lineString([[1, 1], [1, 2], [1, 3], [1, 4]]);
+          if(feature.geometry.type==value.geometry.type){
+            status = turf.booleanOverlap(feature, value);
+            console.log(status);
+          }
+        }else if(methodValue=="disjoint"){
+          status = turf.booleanDisjoint(feature, value);
+          console.log(status);
+        }
+
+        if (methodValue=="intersect"){
+          if(status && status.features.length>0){
+            indexes.push(feature.properties.index);
+          }
+        }else{
+          if(status){
+            indexes.push(feature.properties.index);
+          }
+        }
+      })
+
+    if(indexes.length==0){
+        return false
+    }else{
+        return indexes;
+    }
+  }
+}
+
+GL.selectFeatureOnMap=false;
+GL.selectFeatureOnMapGeojson=[];
+GL.selectMethod="";
+
+GL.addBookmark=function(geojson,name,autoload){
+  geojson.bookmarkName=name;
+  geojson.autoLoad=autoload;
+  geojson.bookId=Date.now();
+  
+  var bookmarks=[];
+  if(localStorage.getItem('bookmarks')!=null){
+    var dataa=localStorage.getItem('bookmarks');
+    if(dataa.length>1){
+      bookmarks=JSON.parse(dataa);
+    }else{
+      bookmarks.push(JSON.parse(dataa));
+    }
+  }
+  bookmarks.push(geojson);
+  GL.savelocalstorage("bookmarks",bookmarks);
+  setTimeout(function() {
+    GL.getBookmarks();
+  }, 300);
+  GL.bilgi("Kayıt Başarılı");
+}
+
+
+GL.addBookmarkLayer=function(){
+  var layerid="BookmarkLayer";
+  var color="#8d26ed";
+  var geojson={type:'FeatureCollection',features:[]};
+  GL.map.addSource(layerid, { 'type': 'geojson', 'data': geojson });
+
+  var inf={id:layerid,name:"Bookmark Katmanı",geotype:"collection",layers:[layerid+"-point",layerid+"-line",layerid+"-polygon"],selectedIndex:[],geojson:geojson,status:false}
+  GL.layerbox.sources.push(inf);
+
+  GL.map.addLayer({
+      'id': layerid+'-point',
+      'type': 'circle',
+      'source': layerid,
+          'paint': {
+              'circle-radius': 4,
+              'circle-color': color
+          },
+          'filter': ['==', '$type', 'Point']
+  });
+  GL.map.addLayer({
+      'id': layerid+'-polygon',
+      'type': 'fill',
+      'source': layerid,
+          'paint': {
+              'fill-color': color,
+              'fill-opacity': 0.7
+          },
+          'filter': ['==', '$type', 'Polygon']
+  });
+  GL.map.addLayer({
+      'id': layerid+'-line',
+      'type': 'line',
+      'source': layerid,
+          'paint': {
+              'line-color': color,
+              'line-width': 2,
+              'line-dasharray':[2,2]
+          },
+          'filter': ['==', '$type', 'LineString']
+  });
+  
+  setTimeout(function(){
+    var features=GL.layerbox.getLayerFeature(layerid,layerid+'-point');
+    var features2=GL.layerbox.getLayerFeature(layerid,layerid+'-line');
+    var features3=GL.layerbox.getLayerFeature(layerid,layerid+'-polygon');
+
+    var infLayer1={id:layerid+"-point",source:layerid,type:"collection",features:features,color:color};
+    var infLayer2={id:layerid+"-line",source:layerid,type:"collection",features:features2,color:color};
+    var infLayer3={id:layerid+"-polygon",source:layerid,type:"collection",features:features3,color:color};
+    GL.layerbox.layers.push(infLayer1);
+    GL.layerbox.layers.push(infLayer2);
+    GL.layerbox.layers.push(infLayer3);
+
+  },100)
+}
+
+setTimeout(function(){
+  GL.addBookmarkLayer();
+}, 2000);
+
+GL.getBookmarks=function(){
+  var data=localStorage.getItem('bookmarks');
+  data=JSON.parse(data);
+  var layer=GL.layerbox.getSource("BookmarkLayer");
+  var geo={type:'FeatureCollection',features:[]};
+  if(data){
+    data.map(function(feature){
+      if(feature.autoLoad){
+        geo.features.push(feature);
+      }
+    });
+    layer.geojson=geo;
+    GL.map.getSource("BookmarkLayer").setData(geo);
+  } 
+}
+
+GL.refreshBookmarkLayer=function(){
+  var data=GL.layerbox.getSource("BookmarkLayer");
+  GL.map.setFilter(data.id+"-polygon",
+    ["==", ["geometry-type"], "Polygon"]);
+
+  GL.map.setFilter(data.id+"-line",
+    ["==", ["geometry-type"], "LineString"]);
+
+  GL.map.setFilter(data.id+"-point",
+    ["==", ["geometry-type"], "Point"]);
+}
+
+setTimeout(function(){
+  GL.getBookmarks();
+}, 2500);

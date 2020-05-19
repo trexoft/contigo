@@ -129,11 +129,14 @@ Vue.component('mydialoginputs', {
                   '</div>'+
                 // checkbox
                 //'<div class="wide-block pt-2 pb-1">'+
-                  '<div v-for="input in modal.inputs" v-if="input.type==\'checkbox\'" class="custom-control custom-checkbox mb-1">'+
+                '<div v-for="input in modal.inputs" v-if="input.type==\'checkbox\'" class="form-group boxed">'+
+                '<div class="input-wrapper">'+
+                  '<div style="float:left;" class="custom-control custom-checkbox mb-1">'+
                       '<input style="float:left important!;" :type="input.type" class="custom-control-input" v-model="input.getvalue" id="customCheckb1">'+
                       '<label style="float:left important!;" class="custom-control-label" for="customCheckb1">{{input.title}}</label>'+
                   '</div>'+
-                //'</div>'+
+                '</div>'+
+                '</div>'+
 
                 // Select
                   '<div class="form-group basic">'+
@@ -145,7 +148,7 @@ Vue.component('mydialoginputs', {
                         '</div>'+
                     '</div>'+
 
-                    '<div class="btn-inline">'+
+                    '<div style="float:right;" class="btn-inline">'+
                 '<a href="#" @click="close(modal,false)" class="btn btn-text-secondary">Kapat</a>'+
                 '<a href="#" @click="GetInputs(modal)" class="btn">Tamam</a>'+
                 '</div>'+

@@ -14,7 +14,7 @@ Vue.component('infopanel', {
         $("#infoPanel").modal('show');
         var data = GL.draw.draw.getAll();
         // stops editing if exists
-        if(data.features.length>0){
+        if(data.features.length>0 && GL.editingLayer!=""){
           var layer=GL.layerbox.getSource(GL.editingLayer);
           if(layer.geotype=="wfst" || layer.geotype=="wfs"){GL.editedFeatures.push(data.features[0])};
 
@@ -109,7 +109,7 @@ Vue.component('infopanel', {
             }},
             {id:'delete',title:'Geometriyi Sil',callback:function(a){
               mydialog.$children[0].close(a.modal,false);
-
+              console.log(item);
               setTimeout(function() {
                 mydialog.$children[0].open({
                   header:'Katman Silme',
@@ -143,6 +143,40 @@ Vue.component('infopanel', {
                 });   
               }, 400);
               
+            }},
+            {id:'bookmarks',title:'Sık Kullanılanlara Ekle',callback:function(a){
+              console.log(a);
+              mydialog.$children[0].close(a.modal,false);
+              var d=JSON.parse(localStorage.getItem('bookmarks'));
+              if(d){
+                var n=d.length+1;
+              }else{
+                  var n=1;
+              }
+              var defaultName="Önemli Yer-"+n;
+              
+              setTimeout(function() {
+                mydialoginputs.$children[0].open({
+                  header:'Sık Kullanılanara Ekle',
+                  inputs:[
+                    {id:'yazi1',type:'text',title:'Kayıt Adı',getvalue:defaultName},
+                    {id:'check1',type:'checkbox',title:'Otomatik Yükleme',getvalue:true},
+                  ],
+                  callback:function(a){
+                    if(a.type=="close"){
+                      GL.bilgi("İşlem İptal Edildi");
+                    }else if(a.type=="ok"){
+                      var bookmarkname=a.values[0].getvalue;
+                      var autoLoad=a.values[1].getvalue;
+                      if(bookmarkname==""){
+                        GL.uyari("Kayıt adı boş olamaz");
+                      }else{
+                        GL.addBookmark(item,bookmarkname,autoLoad);
+                      }
+                    }
+                    
+                }});
+              }, 500);
             }}
           ],
           callback:function(a){

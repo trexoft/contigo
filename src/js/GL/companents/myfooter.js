@@ -38,6 +38,7 @@ Vue.component('myfooter', {
             break;
           }
           case 'bookmarks':{
+            bookmarks.$children[0].open();
             break;
           }
           case 'location':{

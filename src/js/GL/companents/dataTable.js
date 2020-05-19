@@ -263,6 +263,38 @@ Vue.component('datatable', {
                 });   
               }, 400);
               
+            }},
+            {id:'bookmark',title:'Sık Kullanılanlara Kaydet',callback:function(a){
+              mydialog.$children[0].close(a.modal,false);
+              var d=JSON.parse(localStorage.getItem('bookmarks'));
+              if(d){
+                var n=d.length+1;
+              }else{
+                  var n=1;
+              }
+              var defaultName="Önemli Yer-"+n;
+              setTimeout(function() {
+                mydialoginputs.$children[0].open({
+                  header:'Sık Kullanılanara Ekle',
+                  inputs:[
+                    {id:'yazi1',type:'text',title:'Kayıt Adı',getvalue:defaultName},
+                    {id:'check1',type:'checkbox',title:'Otomatik Yükleme',getvalue:true}
+                  ],
+                  callback:function(a){
+                    if(a.type=="close"){
+                      GL.bilgi("İşlem İptal Edildi");
+                    }else if(a.type=="ok"){
+                        var bookmarkname=a.values[0].getvalue;
+                        var autoLoad=a.values[1].getvalue;
+                        if(bookmarkname==""){
+                          GL.uyari("Kayıt adı boş olamaz");
+                        }else{
+                          GL.addBookmark(item,bookmarkname,autoLoad);
+                        }
+                    }
+                    
+                }});
+              }, 500);
             }}
           ],
           callback:function(a){
@@ -382,6 +414,7 @@ Vue.component('datatable', {
               type: "in",
               value: listindex
             }]);
+            that.setPage("tab2");
             break
           }
           case 'crosschosen':{
@@ -652,6 +685,7 @@ Vue.component('datatable', {
           }
           case 'scalarqueries':{
             // mekansal sorgular 
+            spatialquery.$children[0].open(that.source);
             break
           }
 

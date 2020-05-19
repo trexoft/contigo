@@ -246,6 +246,12 @@ Vue.component('mymenu', {
             ]
           },
           {
+            id: 'bookmark',
+            title: GL.lang.panel.mymenu.bookmark,
+            icon: 'bookmarks-outline',
+            submenu:[]
+          },
+          {
             id: 'export',
             title: GL.lang.panel.mymenu.exportmap,
             icon: 'print-outline',
@@ -282,6 +288,10 @@ Vue.component('mymenu', {
       e.preventDefault();
       GL.titresim();
       switch (menuid) {
+        case 'bookmark':{
+          bookmarks.$children[0].open();
+          break
+        }
         case 'navigation':{
           findnavigation.$children[0].open();
           break

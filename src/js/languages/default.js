@@ -66,7 +66,8 @@ var lang = {
       catalogList:"Katalogları Listele",
       catalogHistory:"Geçmişte Eklenen Katmanlar",
       dataLibrary:"Veri Kütüphanesi",
-      overpass:"Overpass Api"
+      overpass:"Overpass Api",
+      bookmark:'Sık Kullanılanlar'
     },
     fileupload:{
       label:'Vektör Dosya Ekleme',
