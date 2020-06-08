@@ -24,15 +24,22 @@ Vue.component('measurement', {
         GL.draw.redraw=false;
         this.points=[];
         GL.draw.deleteAll();
+        GL.map.removeControl(GL.draw.draw); 
+        GL.draw.init();
       },
       showMeasurement:function(obj){
+        console.log(obj);
+        console.log(obj["id"]);
+        console.log(obj.id);
         this.onoff = true;
+        debugger;
           // Uzunluk, ALan, Yükseklik, Koordinat Bilgisi
+        var id= obj["id"];
         var type  = obj["type"] || "türü yok";
         var result = obj["result"] || "Sonuç Yok!...";
         var unit = obj["unit"] || "Birim yok";
         var icon = obj["icon"] || "analytics-outline";
-        var id=obj["id"] || "id bilgisi yok";
+        
         var geometry=obj["geometry"]
 
         var obj2 = {
@@ -57,7 +64,8 @@ Vue.component('measurement', {
                     obj2.unit="inch"
                 }else if(unit=="Metre" && result<1000){
                     obj2.unit="m"
-                    obj2.result=(result).toFixed(3);
+                    console.log(result);
+                    obj2.result=result;
                 }
               
               obj2.show = "Uzunluk : "+obj2.result+" "+obj2.unit;
@@ -95,6 +103,7 @@ Vue.component('measurement', {
       },
       listmeasurements:function(){
         measuretable.$children[0].getValues(this.points);
+        console.log(this.points);
         //GL.draw.stop();
       }
   },
@@ -104,8 +113,11 @@ Vue.component('measurement', {
               '<ion-icon :name="gosterilen.icon"></ion-icon>'+
                 '<div class="text" v-html="gosterilen.show"></div>'+
             '</div>'+
-            '<ion-icon @click="listmeasurements" style="width:24px; height:24px;" name="list-circle-outline"></ion-icon>'+
-            '<ion-icon @click="close" style="width:24px; height:24px;" name="close-circle-outline"></ion-icon>'+
+            //padding-left:80px;
+            '<div>'+
+              '<ion-icon @click="listmeasurements" style="width:24px; height:24px; padding-right:10px;" name="list-circle-outline"></ion-icon>'+
+              '<ion-icon @click="close" style="width:24px; height:24px; padding-right:0px;" name="close-circle-outline"></ion-icon>'+
+            '</div>'+
     '</div>'
   });
 

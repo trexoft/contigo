@@ -20,7 +20,6 @@ Vue.component('overpass', {
       },
       open:function(){
         $("#overpassModal").modal('show');
-        GL.overpass=false;
         
       },
       close:function(e){
@@ -36,6 +35,11 @@ Vue.component('overpass', {
                 dataSport:['sport','sport=swimming'],
                 dataBuilding:['building=yes','amenity=cafe','amenity=restaurant','amenity=theatre','amenity=bank','amenity=marketplace','amenity=fast_food']
         }];
+      },
+      stopQuery:function(){
+        GL.overpass=false;
+        this.close2();
+        GL.bilgi("Overpass Sorgusu Durduruldu");
       },
       filterdata:function(){
         var that=this;
@@ -150,8 +154,9 @@ Vue.component('overpass', {
                                         '</div>'+
                                     '</div>'+
                                     
-                                    '<div class="form-button-group">'+
-                                        '<button @click="filterdata" type="button" class="btn btn-primary btn-block">Haritaya Ekle</button>'+
+                                    '<div class="form-button-group" style="padding-bottom:30px;">'+
+                                        '<button @click="stopQuery" type="button" class="btn btn-primary">Sorguyu Durdur</button>'+
+                                        '<button @click="filterdata" type="button" class="btn btn-primary">Haritaya Ekle</button>'+
                                     '</div>'+
                             '</form>'+
                         '</div>'+

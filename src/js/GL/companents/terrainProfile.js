@@ -48,6 +48,7 @@ Vue.component('terrainprofile', {
           that.features = [];
           that.data = [];
           GL.draw.deleteAll();
+          GL.draw.stop();
         }
       },
       drawline:function(){

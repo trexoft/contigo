@@ -79,23 +79,6 @@ Vue.component('destinationpoint', {
             },100)  
         }
 
-        this.geocoder = new MapboxGeocoder({
-            accessToken: GL.config.mapboxglAccessToken,
-            mapboxgl: mapboxgl,
-            language:'tr',
-            marker: {
-              color: '#4caf50'
-            },
-            placeholder:'Ara...',
-            clearOnBlur:true
-        });
-        
-        setTimeout(function(){
-            document.getElementById('geocoder4').appendChild(that.geocoder.onAdd(GL.map));
-            var a=$("#geocoder4").find('div')[1];
-            $('#searchLocation').hide();
-        }, 100);
-
       },
       close:function(e){
         this.onoff = false;
@@ -106,7 +89,6 @@ Vue.component('destinationpoint', {
         });
         $("#map").show();
 
-        $("#geocoder3").removeClass("show");
         this.manual=false;
         this.selectedPoint=null;
         this.pointInfo="Nokta henüz seçilmedi";
@@ -246,7 +228,6 @@ Vue.component('destinationpoint', {
           if(buttonid==1){
               this.manual=false;
               this.method="location"
-              $('#searchLocation').hide()
               GL.getUserLocation(function(callback){
                   var lat = turf.round(callback.coords.latitude,5);
                   var lon = turf.round(callback.coords.longitude,5);
@@ -254,12 +235,13 @@ Vue.component('destinationpoint', {
                   that.geojson=point;
 
                   GL.bilgi("Durulan Nokta Ataması Yapıldı");
-                  that.pointInfo="Konum Bilgisi Alındı";
+                  that.pointInfo=that.geojson.geometry.coordinates[1]+" "+that.geojson.geometry.coordinates[0];
+
+                  //that.pointInfo="Konum Bilgisi Alındı";
               });
           }else if(buttonid==2){
             this.result="";
             this.method="map"
-            $('#searchLocation').hide();
             this.manual=false;
             this.setPage('tab1');
             GL.draw.start("Point2","destinationPoint",function(geojson,layerId){
@@ -270,26 +252,24 @@ Vue.component('destinationpoint', {
 
                 that.geojson=geojson;
                 that.point1ID=geojson.id;
-                that.pointInfo="Haritadan nokta alındı"
+                //that.pointInfo="Haritadan nokta alındı"
+                that.pointInfo=that.geojson.geometry.coordinates[1].toFixed(5)+" "+that.geojson.geometry.coordinates[0].toFixed(5);
                 GL.bilgi("Durulan Nokta Ataması Yapıldı");
             });
         }else if(buttonid==3){
             this.result="";
             this.manual=false;
             this.method="search"
-            $('#searchLocation').show()
 
-            this.geocoder.on('result', function(ev) {
-              that.geojson= ev.result;
-              that.pointInfo="Arama noktası alındı"  
-              GL.bilgi("Durulan Nokta Ataması Yapıldı");
-            });
+            that.searchget();
+
             
         }else if(buttonid==4){
             this.result="";
-            $('#searchLocation').hide()
             this.manual=true;
             this.method="manual"
+
+            that.manualGet();
         }
     },
     calculatePoint:function(){
@@ -654,6 +634,58 @@ Vue.component('destinationpoint', {
             callback:function(a){
               GL.bilgi("İşlem İptal Edildi.");
           }});
+    },
+    manualGet:function(id){
+      var that=this;
+      setTimeout(function(){
+        mydialoginputs.$children[0].open({
+            header:'Koordinatlar',
+            inputs:[
+              {id:'lat',type:'number',title:'Enlem',getvalue:''},
+              {id:'lon',type:'number',title:'boylam',getvalue:''}
+            ],
+            callback:function(a){
+              if(a.type=="close"){
+                GL.bilgi("İşlem İptal Edildi");
+              }else if(a.type=="ok"){
+                  mydialoginputs.$children[0].geocoder=null;
+                  mydialoginputs.$children[0].modals=[];
+
+                  that.manualLat=Number(a.values[0].getvalue).toFixed(5);
+                  that.manualLon=Number(a.values[1].getvalue).toFixed(5);
+
+                  that.pointInfo=that.manualLat+" "+that.manualLon;
+                    
+                  //that.coords1=Number(a.values[0].getvalue).toFixed(5)+", "+Number(a.values[1].getvalue).toFixed(5);
+                  //that.shownGeom1=Number(a.values[0].getvalue).toFixed(5)+", "+Number(a.values[1].getvalue).toFixed(5);
+              }
+                
+          }});
+      },300)
+    },
+    searchget:function(id){
+      var that=this;
+      mydialoginputs.$children[0].open({
+        header:'Konum Arama',
+        inputs:[
+          {id:'searching',type:'search',title:'Konum',getvalue:''},
+        ],
+        callback:function(a){
+          if(a.type=="close"){
+            GL.bilgi("İşlem İptal Edildi");
+          }else if(a.type=="ok"){
+              mydialoginputs.$children[0].modals=[];
+              var result=a.values[0]; // geojson
+
+              console.log(result);
+              that.geojson= result.getvalue;
+              console.log(that.geojson);
+              that.pointInfo=that.geojson.place_name;
+              //that.coords1=Number(result.getvalue.geometry.coordinates[1]).toFixed(5)+", "+Number(result.getvalue.geometry.coordinates[0]).toFixed(5);
+              //that.shownGeom1=result.getvalue.text;
+          }
+          
+      }});
     }
   },
   template:
@@ -693,7 +725,7 @@ Vue.component('destinationpoint', {
                     // EPSG
                     '<div class="form-group boxed">'+
                         '<div class="input-wrapper">'+
-                            '<label class="label" for="Epsgs" style="font-size:15 !important;">Kullanılacak Koordinat Sistemi Arama</label>'+
+                            '<label class="label" for="Epsgs" style="font-size:15 !important; padding-top:30px;">Kullanılacak Koordinat Sistemi Arama</label>'+
                             '<div class="form-group basic">'+
                                 '<div class="input-group">'+
                                     '<input v-model="search" type="search" class="form-control" id="Epsgs" placeholder="EPSG Kodu">'+
@@ -764,34 +796,13 @@ Vue.component('destinationpoint', {
                         '</select>'+
                     '</div>'+
                 '</div>'+
-                // manual Input
-                    '<div v-if="manual" class="form-group boxed">'+
-                        '<div class="input-wrapper" style="margin-bottom:10px;">'+
-                            '<label class="label" for="latitude">Enlem veya Y</label>'+
-                               '<div class="input-group">'+
-                                    '<input type="number" @change="CreatePoi" v-model="manualLat" class="form-control" id="latitude" placeholder="Enlem veya Y değerini giriniz">'+
-                                    '<i class="clear-input">'+
-                                        '<ion-icon name="close-circle"></ion-icon>'+
-                                    '</i>'+
-                                '</div>'+
-                            '</div>'+
-                                //INPUTS
-                                '<div class="input-wrapper">'+
-                                    '<label class="label" for="longitude">Boylam veya X</label>'+
-                                    '<div class="input-group">'+
-                                    '<input type="number" @change="CreatePoi" v-model="manualLon" class="form-control" id="longitude" placeholder="Boylam veya X değerini giriniz">'+
-                                    '<i class="clear-input">'+
-                                        '<ion-icon name="close-circle"></ion-icon>'+
-                                    '</i>'+
-                                    '</div>'+
-                                '</div>'+
-                    '</div>'+
+
 
                     // Search
-                    '<div class="form-group boxed" id="searchLocation">'+
-                        '<div class="input-group" id="geocoder4" style="border-style: solid; border-width: 2px; margin-top:10px;">'+
-                        '</div>'+
-                    '</div>'+
+                    //'<div class="form-group boxed" id="searchLocation">'+
+                    //    '<div class="input-group" id="geocoder4" style="border-style: solid; border-width: 2px; margin-top:10px;">'+
+                    //    '</div>'+
+                    //'</div>'+
 
                     '<div class="form-group boxed">'+
                         '<div class="input-wrapper">'+

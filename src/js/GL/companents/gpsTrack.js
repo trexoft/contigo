@@ -349,9 +349,11 @@ Vue.component('gpstrack', {
             coords.push(this.data[i].coordinates);
           }
           var line = turf.lineString(coords);
+          var geojson={type:'FeatureCollection',features:[]};
+          geojson.features.push(line);
           var bbox = turf.bbox(line);
           var information={id:"gpstrackLine",name:"Koordinat İzleme Hattı",type:'linestring',layers:["gpstrackLine-point","gpstrackLine-line","gpstrackLine-polygon"]};
-          GL.addGeojsonToLayer(line,"gpsTrackLine",color,information);
+          GL.addGeojsonToLayer(geojson,"gpsTrackLine",color,information);
           GL.map.fitBounds([[bbox[0],bbox[1]],[bbox[2],bbox[3]]]);
           this.setPage("tab1");
         }else{

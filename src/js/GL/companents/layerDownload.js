@@ -354,7 +354,7 @@ Vue.component('layerdownload', {
                                     '</div>'+
                                 '</div>'+
 
-                                '<div class="form-button-group">'+
+                                '<div class="form-button-group" style="padding-bottom:35px;">'+
                                 '<button @click="download" type="button" class="btn btn-primary btn-block">İndir</button>'+
                                 '</div>'+
                             '</form>'+

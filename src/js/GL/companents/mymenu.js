@@ -150,6 +150,12 @@ Vue.component('mymenu', {
                 submenu:[]
               },
               {
+                id: 'addfile',
+                title: GL.lang.panel.mymenu.addFile,
+                icon: 'document-outline',
+                submenu:[]
+              },
+              {
                 id: 'ownfiles',
                 title: GL.lang.panel.mymenu.ownfiles,
                 icon: 'folder-outline',
@@ -288,6 +294,10 @@ Vue.component('mymenu', {
       e.preventDefault();
       GL.titresim();
       switch (menuid) {
+        case 'addfile':{
+          addfile.$children[0].open();
+          break
+        }
         case 'bookmark':{
           bookmarks.$children[0].open();
           break
@@ -515,7 +525,12 @@ Vue.component('mymenu', {
       '</li>' +
     '</ul>' +
 
+    '<div style="height:40px;">'+
+    '</div>'+
+
     '</div>' +
+
+    
 
     '<div class="sidebar-buttons">' +
     '<a href="javascript:;" @click="panelAc(\'profil\',$event)" class="button"> <ion-icon name="person-outline"></ion-icon> </a>' +

@@ -158,7 +158,7 @@ Vue.component('addwmts', {
             var id=Date.now().toString();
             var url2=this.url+this.type.selected;
             GL.addWMTSLayer(this.url,id,this.layerName,this.type.selected);
-            $("#addwmtsserver").modal('hide');
+            this.setPage('tab1');
             GL.bilgi("Başarıyla Eklendi");
         }
       },
@@ -241,6 +241,7 @@ Vue.component('addwmts', {
                     '</div>'+
                 '</div>'+
 
+                /*
                 '<div class="form-group basic" style="padding-left:5%; padding-right:5%;">'+
                     '<div class="input-wrapper">'+
                         '<label class="label" for="typee">Resim Tipi</label>'+
@@ -249,6 +250,7 @@ Vue.component('addwmts', {
                         '</select>'+
                     '</div>'+
                 '</div>'+
+                */
 
                 '<div class="form-group boxed">'+
                     '<button type="button" @click="saveLayer" class="btn btn-primary btn-block ">Kayıt Et</button>'+

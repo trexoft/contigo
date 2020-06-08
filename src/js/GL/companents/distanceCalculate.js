@@ -50,37 +50,7 @@ Vue.component('distancecalculate', {
                 this.data.push(JSON.parse(dataa));
             }
         }
-        this.geocoder = new MapboxGeocoder({
-            accessToken: GL.config.mapboxglAccessToken,
-            mapboxgl: mapboxgl,
-            language:'tr',
-            marker: {
-              color: '#4caf50'
-            },
-            placeholder:'Ara...',
-            clearOnBlur:true
-          });
-
-        setTimeout(function(){
-            document.getElementById('geocoder3').appendChild(that.geocoder.onAdd(GL.map));
-            var a=$("#geocoder3").find('div')[1];
-            //document.getElementById("mapboxgl-ctrl-geocoder").className = "MyClass"; 
-            //var x = document.getElementsByClassName("mapboxgl-ctrl-geocoder mapboxgl-ctrl");
-            //console.log(x);
-            //'<div class="input-group-append">'+
-            //                    '<button @click="addSearchLoc" class="btn btn-outline-secondary" type="button">Button</button>'+
-            //'</div>'+
-            /*
-            var node = document.createElement("div"); 
-            node.className ="input-group-append";
-            var btn = document.createElement("BUTTON");
-            btn.className ="btn btn-outline-secondary";
-            node.appendChild(btn);  
-            a.appendChild(node);     
-            //console.log(document.getElementById('geocoder3'));
-            */
-            $('#searchLocation').hide();
-        }, 100);
+        
       },
       close:function(e){
         this.onoff = false;
@@ -106,7 +76,6 @@ Vue.component('distancecalculate', {
         GL.draw.deleteAll();
         $("#map").show();
 
-        $("#geocoder3").removeClass("show");
         var source=GL.map.getSource('calculateDistance');
         if (source!=undefined){
           GL.removeLayerByID('calculateDistance');
@@ -205,7 +174,6 @@ Vue.component('distancecalculate', {
               GL.uyari("Lütfen nokta seçiniz!");
           }else{
             if(buttonid==1){
-                $('#searchLocation').hide();
                 this.manual=false;
                 GL.getUserLocation(function(callback){
                     var lat = turf.round(callback.coords.latitude,5);
@@ -213,14 +181,15 @@ Vue.component('distancecalculate', {
                     var point = turf.point([lon,lat]);
                     if(that.selectedPoint=="point1"){
                         that.point1=point;
-                        that.point1Name="Konum bilgisi alındı"
+                        //that.point1Name="Konum bilgisi alındı"
+                        that.point1Name=that.point1.geometry.coordinates[1]+" "+that.point1.geometry.coordinates[0];
                     }else if(that.selectedPoint=="point2"){
                         that.point2=point;
-                        that.point2Name="Konum bilgisi alındı"
+                        //that.point2Name="Konum bilgisi alındı"
+                        that.point2Name=that.point2.geometry.coordinates[1]+" "+that.point2.geometry.coordinates[0];
                     }
                 });
             }else if(buttonid==2){
-                $('#searchLocation').hide();
                 this.manual=false;
                 this.setPage('tab1');
                 GL.draw.start("Point2","distancecalculate2",function(geojson,layerId){
@@ -231,28 +200,25 @@ Vue.component('distancecalculate', {
                         }
                         that.point1=geojson;
                         that.point1ID=geojson.id;
-                        that.point1Name="Haritadan nokta seçildi"
+                        //that.point1Name="Haritadan nokta seçildi"
+                        that.point1Name=that.point1.geometry.coordinates[1].toFixed(5)+" "+that.point1.geometry.coordinates[0].toFixed(5);
                     }else if(that.selectedPoint=="point2"){
                         if(that.point2ID!=""){
                             GL.draw.deleteById(that.point2ID);
                         }
                         that.point2=geojson;
                         that.point2ID=geojson.id;
-                        that.point2Name="Haritadan nokta seçildi"
+                        //that.point2Name="Haritadan nokta seçildi"
+                        that.point2Name=that.point2.geometry.coordinates[1].toFixed(5)+" "+that.point2.geometry.coordinates[0].toFixed(5);
                     }
                 });
             }else if(buttonid==3){
                 this.manual=false;
-                $('#searchLocation').show()
-
-                this.geocoder.on('result', function(ev) {
-                    that.searchJson= ev.result;
-                    console.log(that.searchJson);
-                });
+                this.searchget();
                 
             }else if(buttonid==4){
-                $('#searchLocation').hide()
                 this.manual=true;
+                this.manualGet();
             }
           }
         
@@ -266,10 +232,13 @@ Vue.component('distancecalculate', {
             var point = turf.point([lon,lat]);
             if(that.selectedPoint=="point1"){
                 that.point1=point;
-                that.point1Name="Nokta el ile atıldı"
+                //that.point1Name="Nokta el ile atıldı"
+                console.log(point);
+                that.point1Name=Number(that.point1.geometry.coordinates[1]).toFixed(5)+" "+Number(that.point1.geometry.coordinates[0]).toFixed(5);
             }else if(that.selectedPoint=="point2"){
                 that.point2=point;
-                that.point2Name="Nokta el ile atıldı"
+                //that.point2Name="Nokta el ile atıldı"
+                that.point2Name=Number(that.point2.geometry.coordinates[1]).toFixed(5)+" "+Number(that.point2.geometry.coordinates[0]).toFixed(5);
             }
           }else{
               GL.uyari("Enlem ve Boylam Giriniz");
@@ -425,15 +394,70 @@ Vue.component('distancecalculate', {
           if(this.searchJson==null){
             GL.uyari("Öncelikle Konum Seçiniz");
           }else{
-            $('#searchLocation').hide()
             if(that.selectedPoint=="point1"){
                 that.point1=this.searchJson;
-                that.point1Name="Konum araması yapıldı"
+                //that.point1Name="Konum araması yapıldı"
+                console.log(that.point1);
+                that.point1Name=that.point1.place_name;
             }else if(that.selectedPoint=="point2"){
                 that.point2=this.searchJson;
-                that.point2Name="Konum araması yapıldı"
+                //that.point2Name="Konum araması yapıldı"
+                that.point2Name=that.point2.place_name;
             }
           }
+      },
+      manualGet:function(id){
+        var that=this;
+        setTimeout(function(){
+          mydialoginputs.$children[0].open({
+              header:'Koordinatlar',
+              inputs:[
+                {id:'lat',type:'number',title:'Enlem',getvalue:''},
+                {id:'lon',type:'number',title:'boylam',getvalue:''}
+              ],
+              callback:function(a){
+                if(a.type=="close"){
+                  GL.bilgi("İşlem İptal Edildi");
+                }else if(a.type=="ok"){
+                    mydialoginputs.$children[0].geocoder=null;
+                    mydialoginputs.$children[0].modals=[];
+  
+                    that.manualLat=Number(a.values[0].getvalue).toFixed(5);
+                    that.manualLon=Number(a.values[1].getvalue).toFixed(5);
+                    that.manualchange();
+                    //that.pointInfo=that.manualLat+" "+that.manualLon;
+                      
+                    //that.coords1=Number(a.values[0].getvalue).toFixed(5)+", "+Number(a.values[1].getvalue).toFixed(5);
+                    //that.shownGeom1=Number(a.values[0].getvalue).toFixed(5)+", "+Number(a.values[1].getvalue).toFixed(5);
+                }
+                  
+            }});
+        },300)
+      },
+      searchget:function(id){
+        var that=this;
+        mydialoginputs.$children[0].open({
+          header:'Konum Arama',
+          inputs:[
+            {id:'searching',type:'search',title:'Konum',getvalue:''},
+          ],
+          callback:function(a){
+            if(a.type=="close"){
+              GL.bilgi("İşlem İptal Edildi");
+            }else if(a.type=="ok"){
+                mydialoginputs.$children[0].modals=[];
+                var result=a.values[0]; // geojson
+  
+                console.log(result);
+                that.searchJson= result.getvalue;
+                
+                that.addSearchLoc();
+                //that.pointInfo=that.geojson.geometry.coordinates[1]+" "+that.geojson.geometry.coordinates[0];
+                //that.coords1=Number(result.getvalue.geometry.coordinates[1]).toFixed(5)+", "+Number(result.getvalue.geometry.coordinates[0]).toFixed(5);
+                //that.shownGeom1=result.getvalue.text;
+            }
+            
+        }});
       }
   },
   template:
@@ -471,7 +495,7 @@ Vue.component('distancecalculate', {
                 '<div class="wide-block pt-2 pb-2">'+
                     '<form>'+
 
-                    '<label class="label" for="methods">Nokta Seçme Yöntemi</label>'+
+                    '<label class="label" style="padding-top:30px;" for="methods">Nokta Seçme Yöntemi</label>'+
                     '<div class="btn-group btn-group-toggle" data-toggle="buttons" id="methods" style="width:90%;">'+
                         
                         '<label class="btn btn-outline-primary">'+
@@ -522,47 +546,11 @@ Vue.component('distancecalculate', {
                                 '<option value="kilometers">Kilometre</option>'+
                                 '<option value="miles">Mil</option>'+
                                 '<option value="degrees">Derece</option>'+
-                                '<option value="radian">Radyan</option>'+
+                                '<option value="radians">Radyan</option>'+
                             '</select>'+
                         '</div>'+
                     '</div>'+
-
-                    '<div class="form-group boxed" id="searchLocation">'+
-                        '<div class="input-group mb-3" id="geocoder3" style="border-style: solid; border-width: 2px; margin-top:10px;">'+
-                            '<div class="input-group-append">'+
-                                '<button @click="addSearchLoc" class="btn btn-outline-secondary" type="button">Button</button>'+
-                            '</div>'+
-                        '</div>'+
-                    '</div>'+
                         
-                    
-                        '<div v-if="manual" class="form-group boxed">'+
-                            '<div class="input-wrapper" style="margin-bottom:10px;">'+
-                                '<label class="label" for="latitude">Enlem</label>'+
-                                '<div class="input-group mb-3">'+
-                                    '<input type="number" v-model="manualLat" class="form-control" id="latitude" placeholder="Enlem giriniz">'+
-                                    '<i class="clear-input">'+
-                                        '<ion-icon name="close-circle"></ion-icon>'+
-                                    '</i>'+
-                                    '<div class="input-group-append">'+
-                                        '<button @click="manualchange" class="btn btn-outline-secondary" type="button">Nokta Atama</button>'+
-                                    '</div>'+
-                                '</div>'+
-                            '</div>'+
-
-                            '<div class="input-wrapper">'+
-                                '<label class="label" for="longitude">Boylam</label>'+
-                                '<div class="input-group mb-3">'+
-                                '<input type="number" v-model="manualLon" class="form-control" id="longitude" placeholder="Boylam giriniz">'+
-                                '<i class="clear-input">'+
-                                    '<ion-icon name="close-circle"></ion-icon>'+
-                                '</i>'+
-                                '<div class="input-group-append">'+
-                                        '<button @click="manualchange" class="btn btn-outline-secondary" type="button">Nokta Atama</button>'+
-                                '</div>'+
-                                '</div>'+
-                            '</div>'+
-                        '</div>'+
                         // uzunluk hesap sonucu
 
                         '<div class="form-group boxed">'+
@@ -598,7 +586,7 @@ Vue.component('distancecalculate', {
 
                         // divider
                         '<div class="divider bg-primary mt-3 mb-3"> <div class="icon-box bg-primary"> <ion-icon name="arrow-down"></ion-icon> </div> </div>'+
-
+                        // buttons
                         '<div class="form-group boxed" style="padding-left:15px;">'+
                             '<button type="button" @click="clearAll" class="btn btn-secondary shadowed mr-1 mb-1" style="width:90px;">Temizle</button>'+
                             '<button type="button" @click="calculateDistance" class="btn btn-success shadowed mr-1 mb-1" style="width:90px;">Hesapla</button>'+

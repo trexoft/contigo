@@ -23,6 +23,7 @@ Vue.component('bookmarks', {
         $("#bookmarkModal").modal('hide');
       },
       options:function(item){
+          var that=this;
         $("#bookmarkModal").modal('hide');
         mydialog.$children[0].open({
             header:'Seçenekler',
@@ -45,6 +46,14 @@ Vue.component('bookmarks', {
                 if(control==false){
                     layer.geojson.features.push(item);
                 }
+
+                for(var k=0;k<that.bookmarks.length;k++){
+                    if(that.bookmarks[k].bookId==item.bookId){
+                        that.bookmarks[k].autoLoad=true;
+                    }
+                }
+                
+                GL.savelocalstorage("bookmarks",that.bookmarks);
                 
                 GL.map.getSource("BookmarkLayer").setData(layer.geojson);
                 //GL.addGeojsonToLayer(geojson,id,color,information);

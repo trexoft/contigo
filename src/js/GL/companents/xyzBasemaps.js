@@ -74,7 +74,7 @@ Vue.component('xyzbasemaps', {
                     status:false
                   },
                   {
-                    id:"esristreet",
+                    id:"esristreet2",
                     name:"ESRI Topoloji Haritası",
                     type:'xyz',
                     url:[

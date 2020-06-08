@@ -17,7 +17,7 @@ Vue.component('addwms', {
               url:"",
               servicelayer:"",
               versions:{selected:"1.0.0",data:[{name:"1.0.0", value:"1.0.0"},{name:"1.1.0",value:"1.1.0"},{name:"2.0.0",value:"2.0.0"}]},
-              type:{selected:"image/png",data:[{name:"image/png", value:"image/png"},{name:"image/gif",value:"iamge/gif"}]},
+              type:{selected:"image/png",data:[{name:"image/png", value:"image/png"},{name:"image/gif",value:"image/gif"}]},
               history:[],
               layers:[]
           }
@@ -161,7 +161,7 @@ Vue.component('addwms', {
             //'http://localhost:8080/geoserver/topp/wms?service=WMS&version=1.1.0&request=GetMap&layers=topp:states&styles=&bbox={bbox-epsg-3857}&transparent=true&width=768&height=330&srs=EPSG:3857&format=image/png'
             var id=Date.now().toString();
             GL.addWMSLayer(url,id,this.layerName,this.servicelayer,this.versions.selected,this.type.selected,this.url);
-            $("#addwmsserver").modal('hide');
+            this.setPage('tab1');
             GL.bilgi("Başarıyla Eklendi");
 
             this.url="";

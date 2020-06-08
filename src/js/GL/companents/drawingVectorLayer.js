@@ -30,6 +30,7 @@ Vue.component('drawvector', {
       },
       open:function(id){
         this.onoff = true;
+        GL.config.gettingInformation=false;
         this.setPage('tab2');
         GL.touch.on('#drawvector',function(event,direction){
           debugger;
@@ -40,25 +41,27 @@ Vue.component('drawvector', {
         this.layer=source;
 
         this.geojson=source.geojson;
-        if(source.type=="collection" || source.type=="geojson"){
+        if(source.geotype=="collection" || source.geotype=="geojson"){
             this.point=true;
             this.line=true;
             this.polygon=true;
-        }else if(source.type=="point"){
+        }else if(source.geotype=="point"){
             this.point=true;
             this.line=false;
             this.polygon=false;
-        }else if(source.type=="linestring"){
+        }else if(source.geotype=="linestring"){
             this.point=false;
             this.line=true;
             this.polygon=false;
-        }else if(source.type=="polygon"){
+        }else if(source.geotype=="polygon"){
             this.point=false;
             this.line=false;
             this.polygon=true;
         }
       },
       close:function(e){
+        GL.draw.deleteAll();
+        GL.config.gettingInformation=true;
         this.onoff = false;
         GL.touch.off('#drawvector');
         this.pages.map(function(a){
@@ -155,6 +158,7 @@ Vue.component('drawvector', {
         }
       },
       startDrawing:function(type){
+        GL.draw.deleteAll();
           var that=this;
           that.setPage('tab1');
         switch(type){
@@ -168,7 +172,7 @@ Vue.component('drawvector', {
                     if(that.layer.fields!=undefined){
                         that.fields=JSON.parse(JSON.stringify(that.layer.fields));
                     }
-
+                    console.log(that.fields);
                     var index=GL.datatable.getIndex(that.layer.id);
                     console.log(geojson);
                     var geotype=geojson.geometry.type;
@@ -191,6 +195,9 @@ Vue.component('drawvector', {
                         a.value=a.deafultString;
                       }else if(a.default==true && a.type=="boolean"){
                         a.value=a.defaultBoolean;
+                      }else if(a.default==true && a.type=="date"){
+                        console.log(a);
+                        a.value=a.defaultDate;
                       }else{
                         a.value="";
                       }
@@ -238,6 +245,9 @@ Vue.component('drawvector', {
                         a.value=a.deafultString;
                       }else if(a.default==true && a.type=="boolean"){
                         a.value=a.defaultBoolean;
+                      }else if(a.default==true && a.type=="date"){
+                        console.log(a);
+                        a.value=a.defaultDate;
                       }else{
                         a.value="";
                       }
@@ -397,7 +407,7 @@ Vue.component('drawvector', {
       }
   },
   template:
-  '<div v-if="onoff">'+
+  '<div v-if="onoff" id="drawnew">'+
 
       '<div class="appHeader bg-primary text-light">'+
       '<div class="left">'+
@@ -455,7 +465,7 @@ Vue.component('drawvector', {
 
                     '<div class="input-wrapper">'+
                         '<label v-if="item.type==\'string\' && item.name!=\'geotype\'" class="label" for="layerfield">{{item.name}}</label>'+
-                            '<input v-if="item.type==\'string\' && item.name!=\'geotype\'" v-model="item.value" type="text" class="form-control" id="layerfield3" placeholder="Değer Giriniz">'+
+                            '<input v-if="item.type==\'string\' && item.name!=\'geotype\'" v-model="item.value" type="text" class="form-control" id="layerfield3" placeholder="Değer Giriniz" :disabled="item.protecth == true">'+
                                 '<i class="clear-input">'+
                                     '<ion-icon name="close-circle"></ion-icon>'+
                                 '</i>'+

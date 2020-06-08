@@ -80,9 +80,24 @@ Vue.component('basemaps', {
           a.active=false;
         });
         item.active=true;
+
+        var currentStyle = GL.map.getStyle();
+        var appLayers = currentStyle.layers.filter((el) => { // app layers are the layers to retain, and these are any layers which have a different source set
+          return (el.source && el.source != "mapbox://mapbox.satellite" && el.source != "composite");
+        });
+
+
         GL.map.setStyle(item.url);
         localStorage.setItem("currentBaseap",item.id);
         GL.onay("Altlık Harita "+item.title+" olarak değiştirilmiştir.");
+        
+        setTimeout(function(){
+          GL.getAllLoadData(currentStyle,appLayers);
+        },500)
+        //GL.map.on('style.load', function () {
+          // Triggered when `setStyle` is called.
+        //  if (geojson) addDataLayer();
+        //});
         this.close();
       },
       setActive:function(id){
@@ -98,7 +113,7 @@ Vue.component('basemaps', {
     '<div class="modal-dialog" role="document">'+
       '<div class="modal-content">'+
         '<div class="modal-header">'+
-          '<h5 class="modal-title">{{GL.lang.panel.myfooter.basemaps}}e</h5>'+
+          '<h5 class="modal-title">{{GL.lang.panel.myfooter.basemaps}}</h5>'+
           '<a href="javascript:;" style="color:#8bc34a;" data-dismiss="modal">{{GL.lang.general.close}}</a>'+
         '</div>'+
         '<div class="modal-body" :style="GL.config.darkMode==true ? style.dark:style.light">'+

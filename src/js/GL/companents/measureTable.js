@@ -28,6 +28,7 @@ Vue.component('measuretable', {
           GL.zoomFeature(obj2.geometry);
       },
       deleteFeature:function(id,i){
+          console.log(id);
         // delete feature
         GL.draw.deleteById(id);
         //this.obj.splice(i,1);

@@ -92,7 +92,7 @@ Vue.component('myfooter', {
                     GL.loading(GL.lang.mesaj.m1);
                     GL.elevation.getElevation(coords,function(result){
                       GL.loading(false);
-                      measurement.$children[0].showMeasurement({type:"yükseklik",result:result.features[0].properties.elevation,id:result.features[0].id,geometry:result.features[0],unit:"metre"});
+                      measurement.$children[0].showMeasurement({type:"yükseklik",result:result.features[0].properties.elevation,id:geojson.id,geometry:result.features[0],unit:"metre"});
                     });
                   });
                 }}

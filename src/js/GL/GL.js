@@ -96,7 +96,6 @@ GL.map.on('moveend',function(res){
 });
 
 GL.map.on('click',function(e){
-  debugger;
   if(GL.layerbox!==undefined){
     if(GL.config.gettingInformation){
       var alllayers = GL.layerbox.layers;
@@ -433,7 +432,6 @@ GL.map.on('touchend',function(e){
       }
     }
   }else if((fark>500 && fark<2000) && (center1.lng==center2.lng && center1.lat==center2.lat)){
-
     var alllayers = GL.layerbox.layers;
     var layers = [];
     alllayers.map(function(layer){
@@ -825,7 +823,7 @@ GL.draw = {
       }
       case 'Point2':{
         GL.draw.redraw=false;
-        this.draw.changeMode("draw_point");2
+        this.draw.changeMode("draw_point");
         cizimTip = "Nokta Atmaya";
         break;
       }
@@ -1171,7 +1169,13 @@ GL.addGeojsonToLayer=function(geojson,layerid,color,info,zoom){
   if(zoom==undefined){
     zoom=true;
   }
-  var props = geojson.features[0].properties;
+  console.log(geojson);
+  if(geojson.features!=undefined){
+    var props = geojson.features[0].properties
+  }else{
+    var props=null;
+  }
+
   var propsAddStatus = props==null || props==undefined;
   if(propsAddStatus){
     props={};
@@ -1903,9 +1907,9 @@ GL.createVectorLayer=function(data){
             'paint': {
                 'circle-radius': Number(data.paint.circle.radius),
                 'circle-color': data.paint.circle.color,
-                'circle-opacity':data.paint.circle.opacity,
+                'circle-opacity':Number(data.paint.circle.opacity),
                 'circle-stroke-color':data.paint.circle.outlineColor,
-                'circle-stroke-opacity':data.paint.circle.outlineOpacity,
+                'circle-stroke-opacity':Number(data.paint.circle.outlineOpacity),
                 'circle-stroke-width':Number(data.paint.circle.outlineWidth)
             },
             'filter': ['==', '$type', 'Point']
@@ -1954,7 +1958,7 @@ GL.createVectorLayer=function(data){
         GL.layerbox.layers.push(infLayer3);
     
       },100)
-    }else if(data.type.selected=="point"){
+    }else if(data.geotype.selected=="point"){
       GL.map.addLayer({
         'id': layerid+'-point',
         'type': 'circle',
@@ -1966,9 +1970,9 @@ GL.createVectorLayer=function(data){
             'paint': {
                 'circle-radius': Number(data.paint.circle.radius),
                 'circle-color': data.paint.circle.color,
-                'circle-opacity':data.paint.circle.opacity,
+                'circle-opacity':Number(data.paint.circle.opacity),
                 'circle-stroke-color':data.paint.circle.outlineColor,
-                'circle-stroke-opacity':data.paint.circle.outlineOpacity,
+                'circle-stroke-opacity':Number(data.paint.circle.outlineOpacity),
                 'circle-stroke-width':Number(data.paint.circle.outlineWidth)
             },
             'filter': ['==', '$type', 'Point']
@@ -1980,7 +1984,7 @@ GL.createVectorLayer=function(data){
         GL.layerbox.layers.push(infLayer1);
     
       },100)
-    }else if(data.type.selected=="linestring"){
+    }else if(data.geotype.selected=="linestring"){
       GL.map.addLayer({
         'id': layerid+'-line',
         'type': 'line',
@@ -2005,7 +2009,7 @@ GL.createVectorLayer=function(data){
         
         GL.layerbox.layers.push(infLayer2);
       },100)
-    }else if(data.type.selected=="polygon"){
+    }else if(data.geotype.selected=="polygon"){
 
       GL.map.addLayer({
         'id': layerid+'-polygon',
@@ -2045,7 +2049,7 @@ GL.createVectorLayer=function(data){
                 'circle-color': data.paint.color,
                 'circle-opacity':Number(data.paint.circle.opacity),
                 'circle-stroke-color':data.paint.circle.outlineColor,
-                'circle-stroke-opacity':data.paint.circle.outlineOpacity,
+                'circle-stroke-opacity':Number(data.paint.circle.outlineOpacity),
                 'circle-stroke-width':Number(data.paint.circle.outlineWidth)
             },
             'filter': ['==', '$type', 'Point']
@@ -2556,6 +2560,7 @@ GL.uploadCatalog=function(){
     var reader = new FileReader();
     var fileName = file.name.split('.')[0];
     reader.addEventListener("load", function (e) {
+      GL.loading("Katalog Dosyası Yükleniyor");
       var data=reader.result;
       if (typeof data == 'string') {
         data = JSON.parse(data);
@@ -3953,9 +3958,10 @@ GL.createOverpassLayer=function(bbox,filters,layerName){
       if(geojson.features.length!=0){
         GL.addGeojsonToLayer(geojson,"overpass",color,information,false);
       }
-    }else{
-      GL.uyari("Veriler Alınamadı.");
     }
+    //else{
+    //  GL.uyari("Veriler Alınamadı.");
+    //}
   });
 
   var queryLast=GL.overpassQuery(filters,bbox);
@@ -4343,6 +4349,7 @@ GL.addedFeatures=[];
 
 GL.editingLayer="";
 GL.hideEditingFeature=function(obj){
+  console.log(obj);
   var layer=GL.layerbox.getSource(obj.source);
   for(var i=0;i<layer.geojson.features.length;i++){
     if(obj.properties.index==layer.geojson.features[i].properties.index){
@@ -4352,6 +4359,22 @@ GL.hideEditingFeature=function(obj){
       GL.draw.draw.add(layer.geojson.features[i]);
     }
   }
+}
+
+GL.hideFeature=function(obj){
+  console.log(obj);
+  var layer=GL.layerbox.getSource(obj.source);
+  GL.map.setFilter(obj.source+"-polygon",
+              ["all",["==", ["geometry-type"], "Polygon"],
+              ['!',['in', ["number","get","properties",["get","index"]],["literal", [obj.properties.index]]]]]);
+  
+  GL.map.setFilter(obj.source+"-line",
+              ["all",["==", ["geometry-type"], "LineString"],
+              ['!',['in', ["number","get","properties",["get","index"]],["literal", [obj.properties.index]]]]]);
+
+  GL.map.setFilter(obj.source+"-point", 
+              ["all",["==", ["geometry-type"], "Point"],
+              ['!',['in', ["number","get","properties",["get","index"]],["literal", [obj.properties.index]]]]]);
 }
 
 GL.columnCalculations = function (layerId, column, method, valself, columninput,eklenecek, datatype, index) {
@@ -4811,3 +4834,323 @@ GL.refreshBookmarkLayer=function(){
 setTimeout(function(){
   GL.getBookmarks();
 }, 2500);
+
+GL.getAllLoadData=function(style,item){
+  var sources=GL.layerbox.sources;
+  for(var j=0;j<sources.length;j++){
+    var a=GL.map.getSource(sources[j].id);
+    if(a){
+      //console.log(a);
+    }else{
+      GL.map.addSource(sources[j].id, { 'type': 'geojson', 'data': sources[j].geojson });
+    }
+  }
+
+  for(var i=0;i<item.length;i++){
+    var b=GL.map.style.getLayer(item[i].id);
+    if(b){
+      //console.log(b);
+    }else{
+      GL.map.addLayer(item[i]);
+    }
+    
+  }
+}
+
+
+GL.setZindex=function(){
+  var sources=layerbox.$children[0].activeSources.slice().reverse();
+
+  var currentStyle = GL.map.getStyle();
+    var appLayers = currentStyle.layers.filter((el) => { // app layers are the layers to retain, and these are any layers which have a different source set
+      return (el.source && el.source != "mapbox://mapbox.satellite" && el.source != "composite");
+  });
+
+  var layernames=[];
+  for(var i=0;i<sources.length;i++){
+    for(var j=0;j<sources[i].layers.length;j++){
+      layernames.push(sources[i].layers[j]);
+      GL.map.removeLayer(sources[i].layers[j]);
+    } 
+  }
+
+  var addLayers=[];
+  for(var k=0;k<layernames.length;k++){
+    var a=appLayers.findIndex(x => x.id==layernames[k]);
+    if(a!=-1){
+      addLayers.push(appLayers[a]);
+    }
+  }
+
+  console.log(addLayers);
+  addLayers=addLayers.slice().reverse();
+  
+  for(var i=0;i<addLayers.length;i++){
+    GL.map.addLayer(addLayers[i]);
+  }
+  
+  
+}
+
+
+GL.addFile=function(epsgCode){
+  var fileElement = document.createElement('input');
+  fileElement.multiple="multiple";
+  fileElement.type = 'file';
+  fileElement.accept = '.json,.kml,.gpx,.zip,.xlsx,.xls,.ncn';
+
+  setTimeout(function () {
+    fileElement.click();
+  }, 100);
+  var results=[];
+
+  fileElement.addEventListener('input', function (e) {
+    var files = e.currentTarget.files;
+    Object.keys(files).forEach(i=>{
+      var file = e.target.files[i];
+      var reader = new FileReader();
+      var fileName = file.name.split('.')[0];
+      var fileType = file.name.split('.')[file.name.split('.').length-1];
+      GL.loading("Dosya yükleniyor");
+      reader.addEventListener("load", function (e) {
+        switch (fileType) {
+          case "geojson":
+              var id = "geojson" + Date.now();
+              var data=reader.result;
+              var layerCount=GL.map.getStyle().layers.length;
+              var color=GL.config.colors[layerCount%19];
+              var reader2 = new ol.format.GeoJSON();
+
+              if (typeof data == 'string') {
+                data = JSON.parse(data);
+              }
+                
+              if (data.length > 0) {
+                  data.map(function (a) {
+                    var featureArray= reader2.readFeatures(a,{
+                      featureProjection: 'EPSG:4326',
+                      dataProjection:'EPSG:'+epsgCode
+                    });
+                    var features2= new ol.format.GeoJSON().writeFeatures(featureArray,{
+                      featureProjection: 'EPSG:4326'
+                    })
+                    if (typeof features2 == 'string') {
+                      features2 = JSON.parse(features2);
+                    }
+                    //that.addToMap(features2,id,color);
+                    var information={id:id,name:fileName,type:'geojson',layers:[id+"-point",id+"-line",id+"-polygon"]};
+                    GL.addGeojsonToLayer(features2,id,color,information);
+                    GL.loading(false);
+                  });
+              }else{
+                  var featureArray = reader2.readFeatures(data, {
+                    featureProjection: 'EPSG:4326',
+                    dataProjection: 'EPSG:'+epsgCode
+                  });
+                  var features2= new ol.format.GeoJSON().writeFeatures(featureArray,{
+                    featureProjection: 'EPSG:4326',
+                    dataProjection: 'EPSG:'+epsgCode
+                  })
+                  if (typeof features2 == 'string') {
+                    features2 = JSON.parse(features2);
+                  }
+                  //that.addToMap(features2,id,color);
+                  var information={id:id,name:fileName,type:'geojson',layers:[id+"-point",id+"-line",id+"-polygon"]};
+                  GL.addGeojsonToLayer(features2,id,color,information);
+                  GL.loading(false);
+              }
+          break;
+
+          case "kml":
+                      var id = "kml" + Date.now();
+                      var data=reader.result;
+
+                      var reader2 = new ol.format.KML({
+                        extractStyles: false
+                      });
+
+                      var layerCount=GL.map.getStyle().layers.length;
+                      var color=GL.config.colors[layerCount%19];
+
+                      var featureArray = reader2.readFeatures(data, {
+                              "featureProjection": 'EPSG:4326',
+                              "dataProjection": 'EPSG:'+epsgCode
+                      });
+                      var features2= new ol.format.GeoJSON().writeFeatures(featureArray,{
+                              featureProjection: 'EPSG:4326'
+                      })
+                      if (typeof features2 == 'string') {
+                              features2 = JSON.parse(features2);
+                      }
+                      //that.addToMap(features2,id,color);
+                      var information={id:id,name:fileName,type:'kml',layers:[id+"-point",id+"-line",id+"-polygon"]};
+                      GL.addGeojsonToLayer(features2,id,color,information);
+                      GL.loading(false);
+          break
+
+          case "gpx":
+            var id = "gpx" + Date.now();
+            var data=reader.result;
+            var reader2 = new ol.format.GPX();
+
+
+            var layerCount=GL.map.getStyle().layers.length;
+            var color=GL.config.colors[layerCount%19];
+
+            var featureArray = reader2.readFeatures(data, {
+              "featureProjection": 'EPSG:4326',
+              "dataProjection": 'EPSG:'+epsgCode
+            });
+            var features2= new ol.format.GeoJSON().writeFeatures(featureArray,{
+                          featureProjection: 'EPSG:4326'
+            })
+            if (typeof features2 == 'string') {
+              features2 = JSON.parse(features2);
+            }
+                      //that.addToMap(features2,id,color);
+            var information={id:id,name:fileName,type:'gpx',layers:[id+"-point",id+"-line",id+"-polygon"]};
+            GL.addGeojsonToLayer(features2,id,color,information);
+            GL.loading(false);
+          break
+            // Shapefile
+          case "zip":
+            var id = "shp" + Date.now();
+            var data=reader.result;
+            var layerCount=GL.map.getStyle().layers.length;
+            var color=GL.config.colors[layerCount%19];
+            var reader2 = new ol.format.GeoJSON();
+            GL.loading('SHP Files Loading');
+            shp(data).then(function (geojson) {
+              GL.loading(false);
+              GL.addGeoJSONFileSHP(geojson,id,epsgCode,color,fileName);
+            });
+          break
+
+          case "xlsx":
+          case "xls":
+            GL.loading(false);
+            GL.excel.file = XLSX.read(reader.result, {
+              type: 'binary'
+            });
+            GL.excel.file.SheetNames.forEach(function (sheetName) {
+            var excelResult = XLSX.utils.sheet_to_row_object_array(GL.excel.file.Sheets[sheetName]);
+            var obj = {
+              sheetName: sheetName,
+              fields: [],
+              row: 0
+            };
+            obj.row = excelResult.length;
+    
+            for (i in excelResult[0]) {
+              obj.fields.push(i);
+            }
+    
+            GL.excel.sheets.push(obj);
+            }); 
+            // open excel tab
+            excelpanel.$children[0].open(epsgCode,fileName);          
+          break
+
+          case "ncn":
+            var data=reader.result;
+
+            var geojson = {
+              type: "FeatureCollection",
+              features: []
+            };
+
+            var satirlar = data.split('\n');
+            satirlar.map(function (item) {
+              var coords = item.split(' ');
+              var y = parseFloat(coords[1]);
+              var x = parseFloat(coords[2]);
+              var z = parseFloat(coords[3]) || 0;
+              var namex = coords[0];
+
+              if (namex !== "") {
+                var part = {
+                  type: "Feature",
+                  properties: {
+                    name: namex,
+                    elevation: z
+                  },
+                  geometry: {
+                    type: "Point",
+                    coordinates: [y, x]
+                  }
+                };
+                geojson.features.push(part);
+              }
+            });
+
+            var reader2 = new ol.format.GeoJSON();
+            var featureArray = reader2.readFeatures(geojson, {
+              featureProjection: "EPSG:4326",
+              dataProjection: 'EPSG:'+epsgCode
+            });
+
+            var geojson2=reader2.writeFeatures(featureArray);
+            if (typeof geojson2=="string"){
+              geojson2=JSON.parse(geojson2);
+            }
+
+            var id = "ncn" + Date.now();
+            var layerCount=GL.map.getStyle().layers.length;
+            var color=GL.config.colors[layerCount%19];
+
+            var information={id:id,name:fileName,type:'ncn',layers:[id+"-point",id+"-line",id+"-polygon"]};
+            GL.addGeojsonToLayer(geojson2,id,color,information);
+            GL.loading(false);
+          break
+        }
+        
+      })
+      
+      if (file) {
+        if (fileType == "zip" || fileType=="geotiff") {
+          reader.readAsArrayBuffer(file);
+        }else if(fileType=="xlsx" || fileType=="xls"){
+          reader.readAsBinaryString(file);
+        }else {
+          reader.readAsText(file);
+        }
+      }
+
+    })
+    
+  })
+};
+
+GL.addGeoJSONFileSHP=function(data, id,epsgCode,color,fileName) {
+  var reader = new ol.format.GeoJSON();
+  if (typeof data == 'string') {
+    data = JSON.parse(data);
+  }
+
+  var g=[];
+  if (data.length > 0) {
+    data.map(function (a) {
+      var featureArray = reader.readFeatures(a, {
+        "featureProjection": 'EPSG:4326',
+        "dataProjection": 'EPSG:'+epsgCode
+      });
+      GL.downloadFile('geojson',featureArray,"deneme");
+      var features2= new ol.format.GeoJSON().writeFeatures(featureArray,{
+        featureProjection: 'EPSG:4326'
+      })
+      if (typeof features2 == 'string') {
+              features2 = JSON.parse(features2);
+      }
+      g.push(features2);
+    });
+    
+    var a=GL.mergeGeojsons(g);
+    var information={id:id,name:fileName,type:'shp',layers:[id+"-point",id+"-line",id+"-polygon"]};
+    GL.addGeojsonToLayer(a,id,color,information);
+    GL.loading(false);
+  } else {
+    var information={id:id,name:fileName,type:'shp',layers:[id+"-point",id+"-line",id+"-polygon"]};
+    GL.addGeojsonToLayer(data,id,color,information);
+    GL.loading(false);
+  }
+}

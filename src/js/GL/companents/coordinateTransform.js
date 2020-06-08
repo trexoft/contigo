@@ -58,12 +58,6 @@ Vue.component('coordinatetransform', {
             placeholder:'Ara...',
             clearOnBlur:true
           });
-
-        setTimeout(function(){
-            document.getElementById('geocoder3').appendChild(that.geocoder.onAdd(GL.map));
-            var a=$("#geocoder3").find('div')[1];
-            $('#searchLocation').hide();
-        }, 100);
       },
       close:function(e){
         this.onoff = false;
@@ -257,7 +251,9 @@ Vue.component('coordinatetransform', {
                   var point = turf.point([lon,lat]);
 
                   that.geojson=point;
-                  that.pointInfo="Konum Bilgisi alındı"
+                  console.log (that.geojson);
+                  that.pointInfo=that.geojson.geometry.coordinates[1]+" "+that.geojson.geometry.coordinates[0];
+                  //that.pointInfo="Konum Bilgisi alındı"
 
                   GL.bilgi("Nokta Ataması Yapılmıştır");
               });
@@ -275,26 +271,25 @@ Vue.component('coordinatetransform', {
 
                   that.geojson=geojson;
                   that.point1ID=geojson.id;
-                  that.pointInfo="Haritadan nokta alındı"
+
+                  that.pointInfo=that.geojson.geometry.coordinates[1].toFixed(5)+" "+that.geojson.geometry.coordinates[0].toFixed(5);
+                  //that.pointInfo="Haritadan nokta alındı"
                   GL.bilgi("Nokta Ataması Yapılmıştır");
               });
           }else if(buttonid==3){
               this.result="";
               this.manual=false;
               this.method=""
-              $('#searchLocation').show()
 
-              this.geocoder.on('result', function(ev) {
-                that.geojson= ev.result;
-                that.pointInfo="Arama noktası alındı"  
-                GL.bilgi("Nokta Ataması Yapılmıştır");
-              });
+              that.searchget();
               
           }else if(buttonid==4){
               this.result="";
               $('#searchLocation').hide()
               this.manual=true;
               this.method="manual"
+
+              this.manualGet();
           }
     },
     calculateTransform:function(){
@@ -313,7 +308,7 @@ Vue.component('coordinatetransform', {
                 var lon=this.manualLon;
                 var point = turf.point([lon,lat]);
                 that.geojson=point;
-                that.pointInfo="Nokta El İle Girildi"
+                //that.pointInfo="Nokta El İle Girildi"
                 that.registerProjection2(function () {
                   var reader = new ol.format.GeoJSON();
                   var features = reader.readFeatures(that.geojson,{
@@ -460,7 +455,59 @@ Vue.component('coordinatetransform', {
         this.search2="";
         this.epsglist.selected="4326";
         this.epsglist2.selected="4326";
-      }
+      },
+      manualGet:function(id){
+        var that=this;
+        setTimeout(function(){
+          mydialoginputs.$children[0].open({
+              header:'Koordinatlar',
+              inputs:[
+                {id:'lat',type:'number',title:'Enlem',getvalue:''},
+                {id:'lon',type:'number',title:'boylam',getvalue:''}
+              ],
+              callback:function(a){
+                if(a.type=="close"){
+                  GL.bilgi("İşlem İptal Edildi");
+                }else if(a.type=="ok"){
+                    mydialoginputs.$children[0].geocoder=null;
+                    mydialoginputs.$children[0].modals=[];
+
+                    that.manualLat=Number(a.values[0].getvalue).toFixed(5);
+                    that.manualLon=Number(a.values[1].getvalue).toFixed(5);
+
+                    that.pointInfo=that.manualLat+" "+that.manualLon;
+                      
+                    //that.coords1=Number(a.values[0].getvalue).toFixed(5)+", "+Number(a.values[1].getvalue).toFixed(5);
+                    //that.shownGeom1=Number(a.values[0].getvalue).toFixed(5)+", "+Number(a.values[1].getvalue).toFixed(5);
+                }
+                
+          }});
+      },300)
+    },
+    searchget:function(id){
+      var that=this;
+      mydialoginputs.$children[0].open({
+        header:'Konum Arama',
+        inputs:[
+          {id:'searching',type:'search',title:'Konum',getvalue:''},
+        ],
+        callback:function(a){
+          if(a.type=="close"){
+            GL.bilgi("İşlem İptal Edildi");
+          }else if(a.type=="ok"){
+              mydialoginputs.$children[0].modals=[];
+              var result=a.values[0]; // geojson
+
+              console.log(result);
+              that.geojson= result.getvalue;
+              
+              that.pointInfo=that.geojson.place_name;
+              //that.coords1=Number(result.getvalue.geometry.coordinates[1]).toFixed(5)+", "+Number(result.getvalue.geometry.coordinates[0]).toFixed(5);
+              //that.shownGeom1=result.getvalue.text;
+          }
+          
+      }});
+    }
   },
   template:
   '<div v-if="onoff">'+
@@ -497,7 +544,7 @@ Vue.component('coordinatetransform', {
                 '<div class="wide-block pt-2 pb-2">'+
                     '<form>'+
 
-                            '<label class="label" for="methods">Nokta Seçme Yöntemi</label>'+
+                            '<label class="label" style="padding-top:30px;" for="methods">Nokta Seçme Yöntemi</label>'+
                             '<div class="btn-group btn-group-toggle" data-toggle="buttons" id="methods" style="width:90%;">'+
                                 
                                 '<label class="btn btn-outline-primary">'+
@@ -517,13 +564,6 @@ Vue.component('coordinatetransform', {
                                 '</label>'+
                             '</div>'+
 
-                            // Search location
-
-                            '<div class="form-group boxed" id="searchLocation">'+
-                                '<div class="input-group" id="geocoder3" style="border-style: solid; border-width: 2px; margin-top:10px;">'+
-                                '</div>'+
-                            '</div>'+
-
                             '<div class="form-group boxed">'+
                                 '<div class="input-wrapper">'+
                                     '<input type="text" class="form-control" id="Info" v-bind:value="pointInfo" readonly>'+
@@ -533,8 +573,34 @@ Vue.component('coordinatetransform', {
                                 '</div>'+
                             '</div>'+
 
-                            '<div class="divider bg-primary mt-3 mb-3"> <div class="icon-box bg-primary"> <ion-icon name="arrow-down"></ion-icon> </div> </div>'+
+                            //manual search epsg
+                            '<div v-if="manual" class="form-group boxed">'+
+                                '<div class="input-wrapper">'+
+                                    '<label class="label" for="epsg1">Yazılan Koordiant Sistemi</label>'+
+                                    '<select class="form-control custom-select" v-model="epsglist2.selected" id="epsg1" required>'+
+                                        '<option v-for="item in epsglist2.data" :value="item.code">{{item.name}} - EPSG:{{item.code}}</option>'+
+                                    '</select>'+
+                                '</div>'+
+                            '</div>'+
 
+                            // Search list 2
+
+                            '<div v-if="manual" class="form-group boxed">'+
+                                '<div class="input-wrapper">'+
+                                    '<label class="label" for="epsgSearch2" style="font-size:15 !important;">Koordinat Sistemi ara</label>'+
+                                    '<div class="form-group basic">'+
+                                        '<div class="input-group">'+
+                                            '<input v-model="search2" type="search" class="form-control" id="epsgSearch2" placeholder="EPSG Kodu">'+
+                                            '<div class="input-group-append">'+
+                                                '<button @click="searchEPSG2" class="btn btn-outline-secondary" type="button">Ara</button>'+
+                                            '</div>'+
+                                        '</div>'+
+                                    '</div>'+
+                                '</div>'+
+                            '</div>'+
+
+                            '<div class="divider bg-primary mt-3 mb-3"> <div class="icon-box bg-primary"> <ion-icon name="arrow-down"></ion-icon> </div> </div>'+
+                            // EPSG
                             '<div class="form-group boxed">'+
                             '<div class="input-wrapper">'+
                             '<label class="label" for="epsgSearch1" style="font-size:15 !important;">Dönüştürülcek Koordinat Sistemi Arama</label>'+
@@ -560,54 +626,7 @@ Vue.component('coordinatetransform', {
 
                             '<div class="divider bg-primary mt-3 mb-3"> <div class="icon-box bg-primary"> <ion-icon name="arrow-down"></ion-icon> </div> </div>'+
                             
-                            // Search list 2
-
-                            '<div v-if="manual" class="form-group boxed">'+
-                                '<div class="input-wrapper">'+
-                                    '<label class="label" for="epsgSearch2" style="font-size:15 !important;">Koordinat Sistemi ara</label>'+
-                                    '<div class="form-group basic">'+
-                                        '<div class="input-group">'+
-                                            '<input v-model="search2" type="search" class="form-control" id="epsgSearch2" placeholder="EPSG Kodu">'+
-                                            '<div class="input-group-append">'+
-                                                '<button @click="searchEPSG2" class="btn btn-outline-secondary" type="button">Ara</button>'+
-                                            '</div>'+
-                                        '</div>'+
-                                    '</div>'+
-                                '</div>'+
-                            '</div>'+
-                            
-
-                            '<div v-if="manual" class="form-group boxed">'+
-                                '<div class="input-wrapper">'+
-                                    '<label class="label" for="epsg1">Koordiant Sistemi Listesi</label>'+
-                                    '<select class="form-control custom-select" v-model="epsglist2.selected" id="epsg1" required>'+
-                                        '<option v-for="item in epsglist2.data" :value="item.code">{{item.name}} - EPSG:{{item.code}}</option>'+
-                                    '</select>'+
-                                '</div>'+
-                            '</div>'+
-
-                            '<div v-if="manual" class="form-group boxed">'+
-                                '<div class="input-wrapper" style="margin-bottom:10px;">'+
-                                    '<label class="label" for="latitude">Enlem</label>'+
-                                    '<div class="input-group">'+
-                                        '<input type="number" v-model="manualLat" class="form-control" id="latitude" placeholder="Enlem veya Y değerini giriniz">'+
-                                        '<i class="clear-input">'+
-                                            '<ion-icon name="close-circle"></ion-icon>'+
-                                        '</i>'+
-                                    '</div>'+
-                                '</div>'+
-                                //INPUTS
-                                '<div class="input-wrapper">'+
-                                    '<label class="label" for="longitude">Boylam</label>'+
-                                    '<div class="input-group">'+
-                                    '<input type="number" v-model="manualLon" class="form-control" id="longitude" placeholder="Boylam veya X değerini giriniz">'+
-                                    '<i class="clear-input">'+
-                                        '<ion-icon name="close-circle"></ion-icon>'+
-                                    '</i>'+
-                                    '</div>'+
-                                '</div>'+
-                            '</div>'+
-
+                            // Result
                             '<div class="form-group boxed">'+
                                 '<div class="input-wrapper">'+
                                     '<label class="label" for="result">Dönüştürülen Noktanın Sonucu</label>'+
@@ -619,7 +638,7 @@ Vue.component('coordinatetransform', {
                             '</div>'+
 
                             '<div class="divider bg-primary mt-3 mb-3"> <div class="icon-box bg-primary"> <ion-icon name="arrow-down"></ion-icon> </div> </div>'+
-
+                            // Buttons
                             '<div class="form-group boxed" style="padding-left:15px;">'+
                                     '<button type="button" @click="clearAll" class="btn btn-secondary shadowed mr-1 mb-1" style="width:90px;">Temizle</button>'+
                                     '<button type="button" @click="calculateTransform" class="btn btn-success shadowed mr-1 mb-1" style="width:90px;">Dönüştür</button>'+

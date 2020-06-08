@@ -23,6 +23,7 @@ Vue.component('catalogload', {
       },
       open:function(data){
         this.onoff = true;
+        GL.loading(false);
         this.setPage('tab2');
         GL.touch.on('#catalogload',function(event,direction){
           debugger;

@@ -207,6 +207,7 @@ Vue.component('datatable', {
               GL.clearFilters();
             }},
             {id:'edit',title:'Geometriyi Düzenle',callback:function(a){
+              GL.hideFeature(item);
               GL.hideEditingFeature(item);
             }},
             {id:'download',title:'Geometriyi İndir',callback:function(a){
@@ -256,6 +257,15 @@ Vue.component('datatable', {
                         }
                       }
                       GL.map.getSource(item.source).setData(source.geojson);
+                      
+                      var sLayer=GL.layerbox.getSource("SelectLayer");
+                      for(var k=0;k<sLayer.geojson.features.length;k++){
+                        if(sLayer.geojson.features[k].source==item.source && sLayer.geojson.features[k].properties.index==index){
+                          sLayer.geojson.features.splice(k,1);
+                        }
+                      }
+                      GL.map.getSource("SelectLayer").setData(sLayer.geojson);
+
                       GL.bilgi("Geometri silindi");
                       GL.clearFilters();
                     }}
@@ -399,13 +409,14 @@ Vue.component('datatable', {
 
             var selectedItems=layer.selectedIndex; // seçilen indexler
             that.table.selectRow(selectedItems); // select
-            selected = that.table.getSelectedData(); 
-
+            //selected = that.table.getSelectedData(); 
+            //console.log(selected);
             var listindex=[];
-            for(var i=0;i<selected.length;i++){
+            //for(var i=0;i<selected.length;i++){
               //var query={field:"index",type:"=",value:selected[i].index};
-              listindex.push(selected[i].index);
-            }
+            //  listindex.push(selected[i].index);
+            //}
+            listindex=layer.selectedIndex;
             that.table.clearFilter();
             that.table.clearFilter(true);
             that.table.clearHeaderFilter();

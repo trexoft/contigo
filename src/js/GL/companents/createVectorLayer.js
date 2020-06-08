@@ -283,9 +283,9 @@ Vue.component('createvectorlayer', {
             }
 
             if(this.layer.edit==true){
-              obj["protecth"]=true;
-            }else{
               obj["protecth"]=false;
+            }else{
+              obj["protecth"]=true;
             }
 
             if(this.dataTypes.selected=='string'){
@@ -855,7 +855,7 @@ Vue.component('createvectorlayer', {
                           '<th>{{sira+1}}</th>'+
                           '<td>{{sutun.name}}</td>'+
                           '<td>{{sutun.type}}</td>'+
-                          '<td><a v-if="sutun.protecth==false" @click="deleteField(sira)" href="#">Sil</a></td>'+
+                          '<td><a v-if="sutun.name!=\'index\' && sutun.name!=\'geotype\'" @click="deleteField(sira)" href="#">Sil</a></td>'+
                         '</tr>'+
                       '</tbody>'+
                     '</table>'+
